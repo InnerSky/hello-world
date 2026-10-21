@@ -23,7 +23,7 @@ That's it. Claude will:
 
 - [`DESIGN.md`](DESIGN.md): the design, the pipeline, and why it should work
 - [`library/`](library/): the knowledge Claude uses (the Compass, the Council of lenses, the
-  Atlas of practices, Arcs, Craft, Safety)
+  Atlas of practices, Routines, Teachings, Arcs, Craft, Safety)
 - [`engine/`](engine/): the experience player and its script format
 - [`tools/`](tools/): build, preview, narration, and checks for poses and movement routines
 - [`examples/sample/`](examples/sample/): a complete example experience
