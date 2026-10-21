@@ -69,7 +69,13 @@ Artifact. See `examples/sample/experience.json` for a complete working example.
 | `body` | tap where something lives in the body | `prompt`, `sub` |
 | `release` | write something, then watch it dissolve. Not saved unless `keep: true` | `prompt`, `placeholder`, `release` (button label), `after: [lines]` |
 | `companion` | live Claude responds to what they've written, with an offline fallback | `instruction`, `fallback` (required), `include: [stepIds]`, `turns` (allow back-and-forth), `maxWords`, `tier` (`quick`/`default`/`complex`) |
+| `teaching` | a short teaching at the right moment: the idea, a few lines, optional distinctions ("not this, but this"), and its source. Narrated | `title`, `lines`, `distinctions: [{not, is}]`, `source`, `eyebrow` |
 | `card` | closing card to keep: anchor, pocket practice, next step, before→after, lineage. Copy and save | `title`, `anchor`, `lines`, `practice: {name, lines}`, `next`, `eyebrow` |
+
+After the card the engine adds two screens of its own: **for tomorrow**, an optional list of the
+steps the person went through, where they mark what *helped most* and what *could be better* (tap a
+name to see the step again, add a note), and a short **closing** that ends on their anchor. Set
+`"feedback": false` at the top level to leave them out.
 
 ## The figure: showing movements
 
@@ -101,7 +107,9 @@ page, sounding the same everywhere:
 3. `tools/build.mjs` embeds the keys that have clips (`X.narration`) and writes `publish-files.json`,
    the files to publish beside the page.
 
-With narration, voice guidance is on by default, text steps wait for each spoken line, and lines
+Lines are spoken as whole sentences: a `poem` is spoken a stanza at a time, the text sent to the
+speech engine is capitalized and properly ended, and a guided cue lasts until its spoken line has
+finished. With narration, voice guidance is on by default, text steps wait for each spoken line, and lines
 without a clip (echoes of what the person wrote, live companion replies) stay silent rather than
 switching to a device voice. Without narration, the page falls back to the best device voice and
 never picks a novelty voice.

@@ -265,6 +265,28 @@
       "name": "Sitting in the space"
     },
     {
+      "id": "room",
+      "type": "teaching",
+      "name": "Room is not nothing",
+      "title": "Room is not nothing",
+      "lines": [
+        "Lao Tzu noticed that a bowl is useful because of the empty space inside it.",
+        "A room is useful because of the space between its walls.",
+        "The space you just made isn't wasted time. It's what lets the next thing fit."
+      ],
+      "distinctions": [
+        {
+          "not": "An empty hour is a wasted hour.",
+          "is": "An empty hour is where things can land."
+        },
+        {
+          "not": "Clearing means getting rid of everything.",
+          "is": "Clearing means making room for what matters."
+        }
+      ],
+      "source": "after Lao Tzu, Tao Te Ching, chapter 11"
+    },
+    {
       "id": "underneath",
       "type": "write",
       "prompt": "In this space, what matters most to you today?",
@@ -351,6 +373,10 @@
     {
       "name": "Tiny steps",
       "source": "BJ Fogg, Tiny Habits"
+    },
+    {
+      "name": "The usefulness of empty space",
+      "source": "Lao Tzu, Tao Te Ching"
     }
   ]
 }

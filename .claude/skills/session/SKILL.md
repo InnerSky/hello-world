@@ -65,17 +65,23 @@ node tools/preview.mjs private/sessions/<id>    # walks every step in Chromium, 
 node tools/preview.mjs private/sessions/<id> --choose <stepId>=<n>   # walk another branch
 ```
 
-**Narration** (recorded voice; the voice to use is in `private/profile.md`):
+**Narration** (recorded voice; the voice is in `private/profile.md`):
 ```bash
-node tools/narration.mjs lines private/sessions/<id> --voice "<name>"   # prints lines still to record
+node tools/narration.mjs lines private/sessions/<id> --voice "<name>"   # prints {key, say} still to record
 ```
-Synthesize them with Higgsfield `generate_audio_batch` (model `seed_audio`, `voice_type: "preset"`,
-the profile's `voice_id`, `format: "mp3"`, `speech_rate: -12`) in groups of 8 (more are refused with a
-429 rate limit, which costs nothing), waiting for each group with `jobs_wait` before the next.
-Save `[{key, url}]` to `<dir>/narration-results.json` and run
-`node tools/narration.mjs fetch <dir> <dir>/narration-results.json`, then build again. It costs about
-0.5 credits per line. If the clips can't be fetched (the environment must allow
-`d8j0ntlcm91z4.cloudfront.net`), publish without narration and say so.
+Synthesize each line's `say` text with Higgsfield `generate_audio_batch`: `model: "text2speech_v2"`,
+`variant: "elevenlabs"`, `voice_type: "preset"`, the profile's `voice_id`. Up to 12 per batch; resend
+any that come back 429 (rate limit, nothing charged) after the batch finishes. Save `[{key, url}]` to
+`<dir>/narration-results.json`, then:
+```bash
+node tools/narration.mjs fetch <dir> <dir>/narration-results.json --tempo 0.92   # download, trim, level, slow slightly
+node tools/narration.mjs check <dir>     # flags clips that are silent, padded, garbled or far off pace
+```
+Re-record whatever `check` flags (read its reason; a deliberately slow line can be fine). About
+0.003 credits per character, roughly 10 credits an experience. Avoid fragments in narrated text:
+every spoken line should be a whole sentence (poems are spoken a stanza at a time). If the clips can't
+be fetched (the environment must allow `d8j0ntlcm91z4.cloudfront.net`), publish without narration
+and say so.
 
 Fix every build error. Look at 3–4 screenshots (threshold, the Turn, the card), plus any step
 that looked risky. Then run the craft tests in `craft.md`: read the whole script as the person will

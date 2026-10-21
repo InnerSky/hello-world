@@ -241,26 +241,38 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 }
 .overlay .panel { display: grid; gap: 1.1rem; max-width: 30rem; }
 
-/* look back: feedback on individual steps */
-.overlay.lookback { place-items: start center; z-index: 25; }
-.overlay.lookback .panel { width: 100%; max-width: var(--col); padding-block: 8px 32px; }
+/* teaching: a short piece of wisdom, offered at the right moment */
+.teaching h2 { font-size: var(--s-2); }
+.distinctions { display: grid; margin: 0; padding: 0; list-style: none; }
+.distinctions li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; padding-block: .7rem; border-top: 1px solid var(--rule); }
+.distinctions li:last-child { border-bottom: 1px solid var(--rule); }
+.distinctions span { display: grid; gap: .15rem; font-family: var(--font-display); font-size: var(--s-0); line-height: 1.35; }
+.distinctions .not { color: var(--ink-soft); }
+.distinctions .is { color: var(--ink); }
+.distinctions small { font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .08em; color: var(--ink-soft); }
+.distinctions-wrap { transition: opacity 1.2s ease; }
+
+/* for tomorrow: optional per-step feedback after the card */
 .lb-list { display: grid; }
-.lb-row { border-bottom: 1px solid var(--rule); }
+.lb-row { display: grid; gap: .5rem; padding-block: .75rem; border-bottom: 1px solid var(--rule); }
+.lb-row:first-child { border-top: 1px solid var(--rule); }
+.lb-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
 .lb-head {
-  display: grid; grid-template-columns: 5.6rem minmax(0, 1fr) auto; align-items: baseline; gap: 10px; width: 100%;
-  padding: .85em .2em; border: 0; background: none; color: var(--ink); text-align: left; cursor: pointer;
-  font: 500 var(--s-0)/1.35 var(--font-body);
+  display: grid; gap: .1rem; flex: 1 1 14rem; min-width: 0; padding: .2em 0; border: 0; background: none;
+  color: var(--ink); text-align: left; cursor: pointer; font: 500 var(--s-0)/1.35 var(--font-body);
 }
+.lb-head::after { content: "see it again"; font-size: var(--s--1); font-weight: 400; color: var(--ink-faint); }
+.lb-head[aria-expanded="true"]::after { content: "hide"; }
 .lb-move { font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .08em; color: var(--ink-soft); }
-.lb-badge { font-size: var(--s--1); color: var(--accent); white-space: nowrap; }
-.lb-body { display: grid; gap: .8rem; padding: 0 .2em 1rem; }
+.lb-marks { display: flex; gap: 6px; }
+.lb-marks .chip { padding: .55em .85em; }
+.lb-body { display: grid; gap: .7rem; }
 .recap { display: grid; gap: .45rem; padding: .85em 1em; border-radius: 12px; background: var(--veil); }
 .recap p, .recap ul { margin: 0; }
 .recap ul { display: grid; gap: .25rem; padding-left: 1.1em; font-size: var(--s--1); color: var(--ink-soft); }
 .recap-title { font-family: var(--font-display); }
 .recap-answer { display: grid; gap: .15rem; font-size: var(--s--1); }
 .recap-answer span:last-child { white-space: pre-wrap; overflow-wrap: anywhere; }
-@media (max-width: 420px) { .lb-head { grid-template-columns: minmax(0, 1fr) auto; } .lb-move { grid-column: 1 / -1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .screen, .lines.staged p, .cue, .attrib { transition-duration: .01s !important; }
@@ -374,6 +386,11 @@ const plain = str => String(str == null ? "" : str).replace(TPL, (m, id, fb) => 
 const MOVES = X.movements;
 const STEPS = [];
 { let mv = MOVES[0].id; for (const s of X.steps) { if (s.movement) mv = s.movement; STEPS.push(Object.assign({}, s, { movement: mv })); } }
+// every experience that ends with a card gets an optional "for tomorrow" screen and a closing screen
+if (X.feedback !== false && STEPS.some(s => s.type === "card")) {
+  const mv = STEPS[STEPS.length - 1].movement;
+  STEPS.push({ id: "_feedback", type: "feedback", movement: mv }, { id: "_close", type: "close", movement: mv });
+}
 const moveIndex = id => Math.max(0, MOVES.findIndex(m => m.id === id));
 
 const S = { runId: null, startedAt: null, index: 0, history: [], answers: {}, measure: {}, completed: false, sound: !(X.sound && X.sound.default === "off"), voice: !!(X.narration && X.narration.keys && X.narration.keys.length), voiceName: null, feedback: {} };
@@ -668,7 +685,7 @@ function timeline(sc, segs, o) {
     if (!(PAUSED || (o.paused && o.paused()))) {
       inSeg += dt; all += dt;
       if (o.onTick) o.onTick(Math.min(1, all / total), total - all);
-      while (i < segs.length && inSeg >= segs[i].seconds) {
+      while (i < segs.length && inSeg >= segs[i].seconds && !(o.hold && o.hold())) {
         inSeg -= segs[i].seconds; i++;
         if (i >= segs.length) { if (o.onDone) o.onDone(); return; }
         if (o.onSegment) o.onSegment(segs[i], i);
@@ -785,7 +802,7 @@ const RENDER = {
     } else {
       if (lastDone) {
         const look = el("button", { class: "btn quiet", type: "button", id: "look-back" }, "Look back at your last time");
-        look.addEventListener("click", openLookback);
+        look.addEventListener("click", () => { const f = STEPS.findIndex(s => s.type === "feedback"); if (f >= 0) jump(f); });
         screen.append(el("div", { class: "row" }, look));
       }
       setNext(step.cta || "Begin", { action: () => {
@@ -795,31 +812,56 @@ const RENDER = {
     }
   },
 
-  text(step, screen, sc) {
-    if (step.title) screen.append(el("h2", { html: fill(step.title) }));
+  text(step, screen, sc, extra) {
+    extra = extra || {};
+    if (extra.before) screen.append(...extra.before);
+    const title = step.title ? el("h2", { html: fill(step.title) }) : null;
+    if (title) screen.append(title);
     const box = linesEl(step.lines, "staged" + (step.style ? " " + step.style : ""));
     const ps = [...box.children];
     screen.append(box);
+    if (extra.after) { extra.after.style.opacity = 0; screen.append(extra.after); }
     const attrib = step.attribution ? el("p", { class: "attrib", html: fill(step.attribution), style: "opacity:0" }) : null;
     if (attrib) screen.append(attrib);
+    // what is spoken as each line appears: the line itself, or a whole stanza at its first line for a poem
+    const lines = step.lines || [], poem = /\bpoem\b/.test(step.style || "");
+    const speakAt = ps.map((p, i) => {
+      if (!poem) return p.textContent;
+      if (lines[i] === "" || (i > 0 && lines[i - 1] !== "")) return null;
+      const parts = []; for (let k = i; k < ps.length && lines[k] !== ""; k++) parts.push(ps[k].textContent);
+      return parts.join(" ");
+    });
+    const voiceOn = step.voice || (S.voice && step.voice !== false);
     setNext(step.cta || "Continue", { show: false });
     let done = false;
     const finish = () => {
       if (done) return; done = true;
-      ps.forEach(p => p.classList.add("on")); if (attrib) attrib.style.opacity = 1;
+      ps.forEach(p => p.classList.add("on")); if (attrib) attrib.style.opacity = 1; if (extra.after) extra.after.style.opacity = 1;
       sc.after(step.hold || 0, () => setNext(step.cta || "Continue"));
     };
     screen.addEventListener("click", finish);
     (async () => {
       await sc.wait(.4);
+      if (title && extra.speakTitle && voiceOn) await speech.say(title.textContent);
+      let pending = null;
       for (let i = 0; i < ps.length && !done; i++) {
         ps[i].classList.add("on");
-        const said = step.voice || (S.voice && step.voice !== false) ? speech.say(ps[i].textContent) : null;
-        if (i < ps.length - 1) { const w = ps[i].textContent.split(/\s+/).filter(Boolean).length; await Promise.all([said, sc.wait(step.pace != null ? step.pace : Math.min(5.5, 1.2 + w * .26))]); }
-        else await said;
+        const said = voiceOn && speakAt[i] ? speech.say(speakAt[i]) : null;
+        if (said) pending = said;
+        if (i < ps.length - 1) { const w = ps[i].textContent.split(/\s+/).filter(Boolean).length; await Promise.all([poem ? null : said, sc.wait(step.pace != null ? step.pace : Math.min(5.5, 1.2 + w * .26))]); }
       }
+      await pending;
+      if (extra.after) { extra.after.style.opacity = 1; await sc.wait(1.2); }
       await sc.wait(.6); finish();
     })();
+  },
+
+  teaching(step, screen, sc) {
+    screen.classList.add("teaching");
+    const before = [el("p", { class: "eyebrow", html: fill(step.eyebrow || "a teaching") })];
+    const after = step.distinctions && step.distinctions.length ? el("div", { class: "distinctions-wrap" }, el("ul", { class: "distinctions" }, step.distinctions.map(d =>
+      el("li", {}, el("span", { class: "not" }, el("small", { text: d.notLabel || "not" }), el("span", { html: fill(d.not) })), el("span", { class: "is" }, el("small", { text: d.isLabel || "but" }), el("span", { html: fill(d.is) })))))) : null;
+    RENDER.text(Object.assign({}, step, { attribution: step.source || step.attribution }), screen, sc, { before, after, speakTitle: true });
   },
 
   breath(step, screen, sc) {
@@ -868,15 +910,18 @@ const RENDER = {
     const bar = el("i"), start = el("button", { class: "btn", type: "button" }, step.start || "Begin"), pause = el("button", { class: "btn quiet", type: "button", hidden: true }, "Pause");
     screen.append(cue, el("div", { class: "progress", "aria-hidden": "true" }, bar), el("div", { class: "row" }, start, pause));
     setNext("Skip", { quiet: true });
-    let held = false;
+    let held = false, speaking = false, said = 0;
     pause.addEventListener("click", () => { held = !held; pause.textContent = held ? "Resume" : "Pause"; if (held) speech.stop(); });
     start.addEventListener("click", () => {
       start.remove(); pause.hidden = false; if (fig) fig.begin();
       if (step.bell !== false) audio.bell(.6);
       timeline(sc, segs, {
         paused: () => held,
+        hold: () => speaking, // never cut a spoken cue short
         onSegment(c) {
-          swap(cue, fill(c.text), sc); speech.say(plain(c.text));
+          swap(cue, fill(c.text), sc);
+          const mine = ++said; speaking = true;
+          speech.say(plain(c.text)).then(() => { if (mine === said) speaking = false; });
           if (fig && c.figure) { if (Array.isArray(c.figure)) fig.loop(c.figure, c.beat || 2.2); else fig.go(c.figure, c.beat || 1.6); }
         },
         onTick(f) { bar.style.width = (f * 100).toFixed(1) + "%"; },
@@ -1152,27 +1197,67 @@ const RENDER = {
     if (X.lineage && X.lineage.length) keep.append(section("woven from", el("ul", { class: "lineage" }, X.lineage.map(l => el("li", { html: "<b>" + esc(l.name) + "</b>" + (l.source ? " · " + esc(l.source) : "") })))));
     screen.append(keep);
     const status = el("p", { class: "status", id: "save-status" });
-    const look = el("button", { class: "btn", type: "button", id: "look-back" }, "Look back at the steps");
-    const copy = el("button", { class: "btn", type: "button" }, "Copy");
-    const file = el("button", { class: "btn", type: "button", id: "save-file", hidden: !caps.downloads }, "Save as a file");
+    screen.append(keepActions(status), status);
+    const fb = STEPS.findIndex(s => s.type === "feedback");
+    setNext(fb >= 0 ? "Continue" : "", { show: fb >= 0 });
+    updateStatus();
+  },
+
+  // optional: mark what helped most and what could be better, so tomorrow fits better
+  feedback(step, screen, sc) {
+    const steps = [];
+    for (const i of S.history) { const st = STEPS[i]; if (!["threshold", "card", "feedback", "close"].includes(st.type) && !(st.type === "scale" && st.measure) && !steps.includes(st)) steps.push(st); }
+    const overall = el("textarea", { id: "lb-overall", rows: 3, placeholder: "Anything else for tomorrow?", "aria-label": "Anything else for tomorrow" });
+    overall.value = (S.feedback._overall && S.feedback._overall.note) || "";
+    overall.addEventListener("input", () => { if (overall.value.trim()) S.feedback._overall = { note: overall.value }; else delete S.feedback._overall; saveLocal(); sync.soon(); refresh(); });
+    screen.append(
+      el("p", { class: "eyebrow", text: "for tomorrow" }),
+      el("h2", { text: "Which moments helped most? Which could be better?" }),
+      el("p", { class: "sub", text: "Mark only the ones that stand out. Tap a name to see it again. Tomorrow's experience is shaped by what you mark here." }),
+      el("div", { class: "lb-list" }, steps.map(st => lookRow(st, refresh))), overall);
+    function refresh() {
+      const n = Object.keys(S.feedback).length;
+      setNext(n ? "Done" : "Skip", { quiet: !n });
+    }
+    refresh();
+  },
+
+  close(step, screen, sc) {
+    const card = STEPS.find(s => s.type === "card") || {};
+    S.completed = true; saveLocal(); sync.soon(.1);
+    const n = Object.keys(S.feedback).filter(k => k !== "_overall").length;
+    screen.append(
+      el("p", { class: "eyebrow", text: "until tomorrow" }),
+      card.anchor ? el("p", { class: "anchor", html: fill(card.anchor) }) : null,
+      linesEl([n ? "Thank you. Tomorrow's will be shaped around what you marked." : "Thank you for giving yourself this time."], "small"),
+      el("p", { class: "status", id: "save-status" }));
     const again = el("button", { class: "btn quiet", type: "button" }, "Begin again");
-    screen.append(el("p", { class: "note-small", text: "When you're ready: look back at the steps and mark the ones that helped, or didn't. It's how the next one gets better." }), el("div", { class: "actions" }, look, copy, file, again), status);
-    look.addEventListener("click", openLookback);
-    copy.addEventListener("click", () => {
-      const text = summary();
-      const fallback = () => { const box = el("textarea", { class: "copybox", id: "copy-" + step.id, readonly: true, "aria-label": "Your summary" }); box.value = text; copy.parentNode.after(box); box.select(); status.textContent = "Select all and copy."; };
-      try { navigator.clipboard.writeText(text).then(() => { status.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
-    });
-    file.addEventListener("click", async () => {
-      if (!caps.downloads) return;
-      try { await caps.downloads.save({ filename: X.id + ".md", data: summary() }); status.textContent = "Saved."; }
-      catch (e) { status.textContent = e && e.code === "declined" ? "Not saved." : "Saving isn't available here. Copy works instead."; }
-    });
     again.addEventListener("click", () => { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, feedback: {}, completed: false, index: 0 }); resumeAt = 0; lastDone = false; saveLocal(); lastMove = null; show(-1); });
+    const status = $("#save-status", screen), acts = keepActions(status);
+    acts.append(again); screen.append(acts);
+    audio.bell(.5);
     setNext("", { show: false });
     updateStatus();
   }
 };
+
+// Copy and Save: the person's summary (card, notes, what they wrote) to keep or paste back to Claude
+function keepActions(status) {
+  const copy = el("button", { class: "btn quiet", type: "button" }, "Copy");
+  const file = el("button", { class: "btn quiet", type: "button", id: "save-file", hidden: !caps.downloads }, "Save as a file");
+  const wrap = el("div", { class: "actions" }, copy, file);
+  copy.addEventListener("click", () => {
+    const text = summary();
+    const fallback = () => { const box = el("textarea", { class: "copybox", id: "copy-summary", readonly: true, "aria-label": "Your summary" }); box.value = text; wrap.after(box); box.select(); status.textContent = "Select all and copy."; };
+    try { navigator.clipboard.writeText(text).then(() => { status.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+  });
+  file.addEventListener("click", async () => {
+    if (!caps.downloads) return;
+    try { await caps.downloads.save({ filename: X.id + ".md", data: summary() }); status.textContent = "Saved."; }
+    catch (e) { status.textContent = e && e.code === "declined" ? "Not saved." : "Saving isn't available here. Copy works instead."; }
+  });
+  return wrap;
+}
 
 function companionPrompt(step) {
   const parts = ["You are the companion voice inside a private, guided inner experience called \"" + X.title + "\". Claude designed it for one person after a conversation about how they are today. You are speaking with that person now, partway through it."];
@@ -1210,8 +1295,8 @@ function summary() {
   const notes = [];
   for (const st of STEPS) {
     const f = S.feedback[st.id]; if (!f || !(f.reaction || f.note)) continue;
-    const r = REACT.find(x => x[0] === f.reaction);
-    notes.push("- " + stepName(st) + (r ? ": " + r[1].toLowerCase() : "") + (f.note ? (r ? ". " : ": ") + f.note : ""));
+    const r = REACT_LABEL[f.reaction];
+    notes.push("- " + stepName(st) + (r ? ": " + r : "") + (f.note ? (r ? ". " : ": ") + f.note : ""));
   }
   if (S.feedback._overall && S.feedback._overall.note) notes.push("- Overall: " + S.feedback._overall.note);
   if (notes.length) out.push("", "## Your notes on the steps", ...notes);
@@ -1261,8 +1346,9 @@ function voicePicker() {
   return wrap;
 }
 
-/* ---------- look back: per-step feedback, after the card ---------- */
-const REACT = [["helped", "This helped"], ["okay", "It was okay"], ["not", "Didn't help"]];
+/* ---------- for tomorrow: per-step feedback ---------- */
+const REACT = [["helped", "Helped most"], ["work", "Could be better"]];
+const REACT_LABEL = { helped: "helped most", work: "could be better", okay: "it was okay", not: "didn't help" };
 function stepName(st) {
   if (st.name) return plain(st.name);
   if (st.type === "scale" && st.measure) return st.measure === "before" ? "Check-in at the start" : "Check-in at the end";
@@ -1283,48 +1369,24 @@ function recap(st) {
   }
   return box;
 }
-function lookRow(st) {
+function lookRow(st, onChange) {
   const fb = () => S.feedback[st.id] || {};
-  const save = f => { if (!f.reaction && !f.note) delete S.feedback[st.id]; else S.feedback[st.id] = Object.assign(f, { name: stepName(st) }); saveLocal(); sync.soon(); paint(); };
-  const badge = el("span", { class: "lb-badge" });
+  const save = f => { if (!f.reaction && !f.note) delete S.feedback[st.id]; else S.feedback[st.id] = Object.assign(f, { name: stepName(st) }); saveLocal(); sync.soon(); paint(); if (onChange) onChange(); };
   const head = el("button", { class: "lb-head", type: "button", "aria-expanded": "false" },
-    el("span", { class: "lb-move", text: String(MOVES[moveIndex(st.movement)].name || "").toLowerCase() }), el("span", { text: stepName(st) }), badge);
-  const reacts = el("div", { class: "prefs" }, REACT.map(([k, label]) => el("button", { class: "chip", type: "button", "data-k": k }, label)));
+    el("span", { class: "lb-move", text: String(MOVES[moveIndex(st.movement)].name || "").toLowerCase() }), el("span", { text: stepName(st) }));
+  const marks = el("div", { class: "lb-marks", role: "group", "aria-label": "Mark " + stepName(st) }, REACT.map(([k, label]) => el("button", { class: "chip", type: "button", "data-k": k }, label)));
   const note = el("textarea", { id: "lb-" + st.id, rows: 2, placeholder: "What about it? (optional)", "aria-label": "Note on " + stepName(st) });
-  const body = el("div", { class: "lb-body", hidden: true }, recap(st), reacts, note);
-  function paint() {
-    const f = fb(), r = REACT.find(x => x[0] === f.reaction);
-    reacts.querySelectorAll("[data-k]").forEach(b => b.setAttribute("aria-pressed", String(f.reaction === b.dataset.k)));
-    badge.textContent = r ? r[1].toLowerCase() : f.note ? "note" : "";
-  }
+  const body = el("div", { class: "lb-body", hidden: true }, recap(st), note);
+  function paint() { const f = fb(); marks.querySelectorAll("[data-k]").forEach(b => b.setAttribute("aria-pressed", String(f.reaction === b.dataset.k))); }
   note.value = fb().note || "";
-  reacts.addEventListener("click", e => {
+  marks.addEventListener("click", e => {
     const b = e.target.closest("[data-k]"); if (!b) return;
     const f = Object.assign({}, fb()); if (f.reaction === b.dataset.k) delete f.reaction; else f.reaction = b.dataset.k; save(f);
   });
   note.addEventListener("input", () => { const f = Object.assign({}, fb()); if (note.value.trim()) f.note = note.value; else delete f.note; save(f); });
   head.addEventListener("click", () => { const open = body.hidden; body.hidden = !open; head.setAttribute("aria-expanded", String(open)); });
   paint();
-  return el("div", { class: "lb-row" }, head, body);
-}
-function openLookback() {
-  if (document.querySelector(".overlay.lookback")) return;
-  const steps = [];
-  for (const i of S.history.concat(S.index)) { const st = STEPS[i]; if (st.type !== "threshold" && st.type !== "card" && !(st.type === "scale" && st.measure) && !steps.includes(st)) steps.push(st); }
-  const overall = el("textarea", { id: "lb-overall", rows: 3, placeholder: "Anything else about today's experience?", "aria-label": "Anything else" });
-  overall.value = (S.feedback._overall && S.feedback._overall.note) || "";
-  overall.addEventListener("input", () => { if (overall.value.trim()) S.feedback._overall = { note: overall.value }; else delete S.feedback._overall; saveLocal(); sync.soon(); });
-  const done = el("button", { class: "btn", type: "button" }, "Done");
-  const panel = el("div", { class: "panel" },
-    el("p", { class: "eyebrow", text: "look back" }), el("h2", { text: "What helped, and what didn't?" }),
-    el("p", { class: "note-small", text: "Tap a step to see it again. Mark only the ones that stood out, either way." }),
-    el("div", { class: "lb-list" }, steps.map(lookRow)), overall, el("div", { class: "actions" }, done));
-  const ov = el("div", { class: "overlay lookback", role: "dialog", "aria-modal": "true", "aria-label": "Look back at the steps" }, panel);
-  document.body.append(ov);
-  const close = () => { ov.remove(); const b = $("#look-back"); if (b) b.focus(); };
-  done.addEventListener("click", close);
-  ov.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
-  const first = ov.querySelector(".lb-head"); if (first) first.focus();
+  return el("div", { class: "lb-row" }, el("div", { class: "lb-top" }, head, marks), body);
 }
 
 /* ---------- controls ---------- */
@@ -1348,7 +1410,7 @@ $("#steady-back").addEventListener("click", closeSteady);
 $("#steady-end").addEventListener("click", () => { closeSteady(); const c = STEPS.findIndex(s => s.type === "card"); if (c >= 0) { if (!S.runId) begin(); jump(c); } });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !overlay.hidden) { closeSteady(); return; }
-  if (!overlay.hidden || document.querySelector(".overlay.lookback")) return;
+  if (!overlay.hidden) return;
   const t = e.target, tag = t && t.tagName;
   if (tag === "TEXTAREA" || tag === "INPUT" || tag === "BUTTON" || tag === "A") return;
   if (e.key === "Enter" || e.key === "ArrowRight") { if (!nextBtn.classList.contains("hide")) nextBtn.click(); }

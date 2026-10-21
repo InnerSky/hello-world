@@ -29,7 +29,7 @@ const err = m => errors.push(m), warn = m => warnings.push(m);
 const TYPES = {
   threshold: [], text: ["lines"], breath: [], guided: ["cues"], sit: ["seconds"], write: ["prompt"],
   choose: ["prompt", "options"], words: ["prompt", "words"], scale: ["prompt"], body: ["prompt"],
-  release: ["prompt"], companion: ["instruction", "fallback"], card: []
+  release: ["prompt"], companion: ["instruction", "fallback"], card: [], teaching: ["title", "lines"]
 };
 const BREATH = ["sigh", "resonance", "extended", "box", "4-7-8", "awaken", "hum"];
 const skyNames = Object.keys(skies).filter(k => !k.startsWith("_"));
@@ -99,6 +99,7 @@ function estimate(s) {
     case "body": return 35;
     case "companion": return 75 * (s.turns || 1);
     case "card": return 90;
+    case "teaching": return (s.lines || []).reduce((a, l) => a + Math.min(5.5, 1.2 + words(l) * .26) + 1.5, 0) + (s.distinctions || []).length * 5 + 8;
   }
   return 20;
 }
