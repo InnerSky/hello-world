@@ -93,46 +93,14 @@
     },
     {
       "id": "make-room",
-      "type": "guided",
-      "name": "Making room in the body",
+      "routine": "side-stretch",
       "title": "Making room in the body",
       "lines": [
         "Stand up if you can, or sit tall. Follow the figure, or move however feels good to you."
       ],
-      "figure": "stand",
-      "cues": [
-        {
-          "text": "Feet under your hips, knees soft, arms loose.",
-          "seconds": 7,
-          "figure": "stand"
-        },
-        {
-          "text": "Sweep both arms out to the sides and all the way up. Reach as if you were taking up more space.",
-          "seconds": 10,
-          "figure": "reach-up"
-        },
-        {
-          "text": "Bring your right arm up and over toward the left. Let your left hand slide down your leg. Feel your right side open.",
-          "seconds": 11,
-          "figure": "bend-left"
-        },
-        {
-          "text": "Back to the middle.",
-          "seconds": 4,
-          "figure": "reach-up"
-        },
-        {
-          "text": "Left arm up and over toward the right. Right hand slides down. Feel your left side open.",
-          "seconds": 11,
-          "figure": "bend-right"
-        },
-        {
-          "text": "Let both arms float down. Notice the room you made.",
-          "seconds": 8,
-          "figure": "stand"
-        }
-      ],
-      "after": "Notice how much room there is now."
+      "cueText": {
+        "2": "Sweep both arms out to the sides and all the way up. Reach as if you were taking up more space."
+      }
     },
     {
       "id": "orient",
@@ -349,10 +317,6 @@
     {
       "name": "Cyclic sighing",
       "source": "Balban, Huberman et al., Stanford, 2023"
-    },
-    {
-      "name": "Side stretch",
-      "source": "hatha yoga"
     },
     {
       "name": "Orienting",

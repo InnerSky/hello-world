@@ -32,6 +32,11 @@ People feel unsure when a movement is only described. Every physical step needs:
 3. the quality ("slowly", "as far as is comfortable"),
 4. **a figure pose on every cue** (see `engine/SCHEMA.md`), so they can see it as well as read it.
 
+Start from a routine in `library/routines.json` whenever one fits: its cues, poses and timing have
+been checked frame by frame. Personalize the words with `cueText`, not the choreography. A new
+movement sequence gets checked the same way before it's used (`node tools/routines.mjs`), and a
+good one goes into the library.
+
 ## Peak, end and surprise
 
 - People remember an experience by its **peak and its end** (Kahneman's peak–end rule). Design
@@ -40,6 +45,13 @@ People feel unsure when a movement is only described. Every physical step needs:
 - **Don't reveal the agenda.** Not knowing what comes next is part of the pleasure. The threshold
   says how long it takes and what to have ready, not what will happen.
 - Give every step a short `name` so the look-back list reads clearly.
+
+## Teachings
+
+A short teaching (`library/teachings.md`) gives words to what was just felt: one idea, up to four
+lines, up to two distinctions, its source. Place it in a receptive moment (after a practice opens
+something, or before a reflection it can light up), offer it as something to try on, and follow it
+with doing or reflecting so they can test it. Paraphrase and attribute; never invent a quote.
 
 ## Avoid
 
@@ -72,7 +84,8 @@ People feel unsure when a movement is only described. Every physical step needs:
 9. **Time test.** Does the build estimate match what they asked for? Leave slack: real sessions
    run longer than the estimate when something deep happens.
 10. **Movement test.** Does every physical cue have a starting position, a clear action and a figure?
-    Is there an alternative for every requirement (music, standing, sound, space)?
+    Is there an alternative for every requirement (music, standing, sound, space)? Is each
+    sequence a checked routine, or checked frame by frame now?
 11. **Transformation test.** Is there a being objective, and at least one moment where the person
     discovers something for themselves rather than being told it? Is every block of experience
     followed by a moment to reflect? Does it end with new meaning in their own words?

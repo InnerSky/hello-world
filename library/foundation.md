@@ -52,3 +52,5 @@ design: *how might this person be different, or see differently, because of thes
 - **The craft tests** (craft.md) include a transformation test: does the person discover something
   themselves, rather than being told it?
 - **Integration** asks how they see themselves now, not only what they liked.
+- **Teachings** (teachings.md) are the knowing layer: one short idea at a receptive moment, offered
+  to try on and then tested by doing or reflecting. Knowing serves being.

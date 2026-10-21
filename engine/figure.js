@@ -7,7 +7,8 @@
      la ra arms, screen-left and screen-right [upper abduction, upper flexion, fore abduction, fore flexion]
      ll rl legs, same order [thigh abduction, thigh flexion, shin abduction, shin flexion]
    Limb angles are absolute: 0 hangs straight down, abduction swings outward (90 = sideways,
-   180 = overhead), flexion swings forward (90 = straight ahead). */
+   180 = overhead), flexion swings forward (90 = straight ahead).
+   "name@yaw" shows a named pose from another angle, e.g. "reach-up@40". */
 function makeFigure(POSES, opts) {
   opts = opts || {};
   const TS = opts.timescale || 1, NS = "http://www.w3.org/2000/svg", R = Math.PI / 180, G0 = 300;
@@ -15,8 +16,9 @@ function makeFigure(POSES, opts) {
   const BASE = { yaw: 0, sp: [0, 0, 0, 0, 0, 0], la: [8, 0, 6, 8], ra: [8, 0, 6, 8], ll: [4, 0, 2, 0], rl: [4, 0, 2, 0] };
   const KEYS = ["sp", "la", "ra", "ll", "rl"];
   function pose(p) {
-    const src = (typeof p === "string" ? POSES[p] : p) || {};
-    const out = { yaw: src.yaw != null ? src.yaw : BASE.yaw };
+    const at = typeof p === "string" ? p.split("@") : null;
+    const src = (at ? POSES[at[0]] : p) || {};
+    const out = { yaw: at && at[1] ? Number(at[1]) : src.yaw != null ? src.yaw : BASE.yaw };
     for (const k of KEYS) out[k] = (src[k] || BASE[k]).slice();
     return out;
   }
@@ -99,6 +101,7 @@ function makeFigure(POSES, opts) {
       seq = list; beat = sec || 2.4; seqI = 0; toward(seq[0], beat);
     },
     set(p) { seq = null; cur = from = to = pose(p); draw(cur); },
+    blend(a, b, t) { seq = null; cur = from = to = mix(pose(a), pose(b), t); draw(cur); }, // for checking transitions
     stop() { seq = null; if (raf) cancelAnimationFrame(raf); raf = 0; }
   };
 }

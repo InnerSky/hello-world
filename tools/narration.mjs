@@ -19,6 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
+import { expand } from "./expand.mjs";
 
 const [cmd, dir, arg] = process.argv.slice(2);
 if (!cmd || !dir) { console.error("usage: node tools/narration.mjs lines|fetch|check <dir> [results.json]"); process.exit(2); }
@@ -56,7 +57,7 @@ function probe(file) {
 }
 
 if (cmd === "lines") {
-  const X = JSON.parse(fs.readFileSync(path.join(dir, "experience.json"), "utf8"));
+  const X = expand(JSON.parse(fs.readFileSync(path.join(dir, "experience.json"), "utf8"))).X;
   const lines = [];
   const add = (t, where) => { if (!t || /\{\{/.test(t)) return; const text = plain(t); if (text && !lines.some(l => l.text === text)) lines.push({ key: narrKey(text), text, say: sayText(text), where }); };
   for (const s of X.steps) {

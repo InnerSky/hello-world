@@ -25,7 +25,7 @@ That's it. Claude will:
 - [`library/`](library/): the knowledge Claude uses (the Compass, the Council of lenses, the
   Atlas of practices, Arcs, Craft, Safety)
 - [`engine/`](engine/): the experience player and its script format
-- [`tools/`](tools/): build and preview
+- [`tools/`](tools/): build, preview, narration, and checks for poses and movement routines
 - [`examples/sample/`](examples/sample/): a complete example experience
 
 To try the example locally:

@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { expand } from "./expand.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dir = process.argv[2];
@@ -25,12 +26,16 @@ const figure = fs.readFileSync(path.join(root, "engine/figure.js"), "utf8");
 
 const errors = [], warnings = [];
 const err = m => errors.push(m), warn = m => warnings.push(m);
+// steps built from a library routine take its tested cues and poses
+const expanded = expand(X);
+X = expanded.X; errors.push(...expanded.errors);
 
 const TYPES = {
   threshold: [], text: ["lines"], breath: [], guided: ["cues"], sit: ["seconds"], write: ["prompt"],
   choose: ["prompt", "options"], words: ["prompt", "words"], scale: ["prompt"], body: ["prompt"],
   release: ["prompt"], companion: ["instruction", "fallback"], card: [], teaching: ["title", "lines"]
 };
+const poseOk = f => { const [n, yaw] = f.split("@"); return !!poses[n] && !n.startsWith("_") && (yaw == null || /^-?\d+$/.test(yaw)); };
 const BREATH = ["sigh", "resonance", "extended", "box", "4-7-8", "awaken", "hum"];
 const skyNames = Object.keys(skies).filter(k => !k.startsWith("_"));
 
@@ -62,7 +67,7 @@ steps.forEach((s, i) => {
   if (s.sky && !skyNames.includes(s.sky)) err(`${at}: unknown sky "${s.sky}"`);
   if (s.type === "breath" && s.pattern && !Array.isArray(s.pattern) && !BREATH.includes(s.pattern)) err(`${at}: unknown breath pattern "${s.pattern}" (known: ${BREATH.join(", ")})`);
   const figs = [].concat(s.figure || [], s.figureEnd || [], ...(s.cues || []).map(c => c && c.figure || []), ...(Array.isArray(s.pattern) ? s.pattern.map(p => p.figure || []) : []));
-  for (const f of figs.flat()) if (typeof f === "string" && (!poses[f] || f.startsWith("_"))) err(`${at}: unknown pose "${f}" (see engine/poses.json)`);
+  for (const f of figs.flat()) if (typeof f === "string" && !poseOk(f)) err(`${at}: unknown pose "${f}" (see engine/poses.json; "name@yaw" turns one)`);
   if (s.type === "choose" && Array.isArray(s.options) && s.options.length < 2) warn(`${at}: a choice with fewer than 2 options`);
   if (s.type === "scale" && s.measure && !["before", "after"].includes(s.measure)) err(`${at}: measure must be "before" or "after"`);
   for (const c of [].concat(s.when || [])) {

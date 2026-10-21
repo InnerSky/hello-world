@@ -88,11 +88,35 @@ that demonstrates them in time with the cues (`engine/figure.js`, poses in `engi
 - Before the person presses Begin, the figure previews the whole sequence on a slow loop.
 - Front-facing poses are mirror images, like an instructor facing a class: cue "right arm over to
   the left" with `bend-left`.
+- `"name@yaw"` shows a pose from another angle (0 = facing you, 90 = side view), e.g.
+  `"reach-up@40"`. Use it to keep a loop at one angle so the figure doesn't swing round on every move.
 
 Poses: `stand` `stand-3q` `stand-side` `soft-knees` `reach-up` `yawn` `curl` `arms-wide` `bend-left`
-`bend-right` `heart` `belly` `open-chest` `nod` `shake-a` `shake-b` `sway-left` `sway-right` `dance-up`
-`dance-low` `cat` `cow` `fold` `bj-forward` `bj-wide` `bj-up` `sit`. To add one, edit `poses.json` and
+`bend-right` `heart` `belly` `heart-belly` `open-chest` `nod` `shake-a` `shake-b` `sway-left`
+`sway-right` `dance-up` `dance-low` `cat` `cow` `fold` `bj-forward` `bj-wide` `bj-up` `neck-left`
+`neck-right` `look-up` `chin-down` `arms-forward` `squat` `half-squat` `march-left` `march-right`
+`hinge` `roll-1` `roll-2` `roll-3` `wide-low` `sit-hands-heart` `sit-tall` `sit`. To add one, edit `poses.json` and
 check it with `node tools/poses.mjs` (writes a contact sheet to `engine/preview/poses.png`).
+
+### Routines: ready-made movement
+
+`library/routines.json` holds movement sequences whose cues, poses and timing have been checked
+frame by frame. A step can start from one:
+
+```jsonc
+{ "id": "wake", "routine": "cat-stretch" }                       // the whole routine as written
+{ "id": "wake", "routine": "cat-stretch", "movement": "wake",
+  "title": "Wake up slowly",                                       // any field the step sets wins
+  "cueText": { "13": "Find the place that's still tight from the drive, and stretch it your way." },
+  "drop": [10, 11, 12] }                                           // leave cues out (numbered from 1)
+```
+
+The routine supplies `type`, `title`, `lines`, `figure`, `ready`, `cues` (or a breath `pattern` and
+`cycles`), `after` and `quiet`; its lineage joins the experience's credits, and its title becomes the
+step's `name`. `purpose`, `needs`, `cautions` and `minutes` are notes for composing. Reword cues with
+`cueText` rather than rewriting them, so the poses still match. `node tools/routines.mjs [name]`
+renders each routine as a filmstrip (`library/preview/<name>.png`): every cue, every pose, and the
+halfway point of every move. Check a new or changed routine there before using it.
 
 ## Voice: recorded narration
 

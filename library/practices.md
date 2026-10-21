@@ -6,6 +6,10 @@ Practices are the building blocks. Each entry gives: **lineage** · **fits** (st
 They're grouped by where they usually sit in the arc (see `arcs.md`), but most can move.
 Adapt every one of them to the person. Use their words, their situation, their images.
 
+Practices marked **routine `name`** are ready-made and checked frame by frame in
+`library/routines.json`: start a step from one with `"routine": "name"` instead of writing cues and
+poses from scratch, then personalize it (see `engine/SCHEMA.md`, Routines).
+
 ---
 
 ## Arrive: crossing the threshold
@@ -36,11 +40,13 @@ Adapt every one of them to the person. Use their words, their situation, their i
 - **Orienting**: Peter Levine · all, especially shut down · 1 min · `guided`
   Eyes open; let the eyes wander; land on something pleasant; notice the body's response.
 - **5-4-3-2-1 grounding**: CBT/DBT · activated, dissociated · 2 min · `guided` (or `write`)
-- **Self-holding**: Peter Levine · activated, tender · 1–2 min · `guided`
+- **Self-holding**: Peter Levine · activated, tender · 1–2 min · `guided` · routine `self-holding`
   One hand on the heart, one on the forehead (or belly); stay until something shifts.
 - **Butterfly hug**: Lucina Artigas, EMDR · activated, tender · 1 min · `guided`
-- **Shake it out**: TRE; qigong · mixed, restless · 1 min · `guided` with short cues
+- **Shake it out**: TRE; qigong · mixed, restless · 1 min · `guided` with short cues · routine `shake-out`
   Needs a space where they can move; give a seated option (shake hands, bounce knees).
+- **Arriving in your seat**: Zen and Insight posture teaching · before a sit, inquiry or writing · 1 min · routine `seated-arrival`
+- **Let the neck go**: somatic movement; physical therapy · screen tension, jaw, shoulders · 1 min · routine `neck-release`
 - **Pendulation**: Peter Levine · after a hard feeling · 2 min · `body` + `guided`
   Find a place that feels okay (even neutral), then the hard place, then back. Let them sway between the two.
 - **Soothing touch**: MSC · tender, self-critical · 1 min · `guided`
@@ -49,18 +55,26 @@ Adapt every one of them to the person. Use their words, their situation, their i
 
 ## Wake and enliven: raising energy through the body
 
-- **Cat stretch (pandiculation)**: Thomas Hanna's somatics · morning stiffness, flat, tight · 2–3 min · `guided` with figures
+- **Cat stretch (pandiculation)**: Thomas Hanna's somatics · morning stiffness, flat, tight · 2–3 min · `guided` with figures · routine `cat-stretch`
   Tighten a little, lengthen slowly all the way out, let go completely. Poses: `curl` → `reach-up` →
   `yawn` → `stand`, side bends `bend-left` / `bend-right`, then `cat` / `cow` with knees soft and
   hands on thighs. Inherently pleasurable: "a cat doesn't stretch to be productive".
-- **Breath of Joy**: Kripalu yoga · flat, low energy, morning · 1 min · `breath` with a custom pattern and figures
+- **Breath of Joy**: Kripalu yoga · flat, low energy, morning · 1 min · `breath` with a custom pattern and figures · routine `breath-of-joy`
   Three sips of air with the arms (`bj-forward`, `bj-wide`, `bj-up`), then "ha!" swinging down
   (`fold`), rising (`soft-knees`). Care: slow down if light-headed; keep the fold small with high
   blood pressure or after head injury.
-- **Shake it out**: TRE; qigong · restless, mixed · 1 min · `guided`, cue figure `["shake-a", "shake-b"]` with `beat: 0.4`
-- **One-song dance**: Gabrielle Roth's 5Rhythms; Stuart Brown on play · Enliven, Savor · 3–4 min · `guided` with `quiet: true`
+- **Shake it out**: TRE; qigong · restless, mixed · 1 min · `guided`, cue figure `["shake-a", "shake-b"]` with `beat: 0.4` · routine `shake-out`
+- **One-song dance**: Gabrielle Roth's 5Rhythms; Stuart Brown on play · Enliven, Savor · 3–4 min · `guided` with `quiet: true` · routine `one-song-dance`
   A song they love, or one they sing or hum. Cues build from one body part to the whole body.
   Figure loops `["sway-left", "sway-right"]`, then `["dance-low", "dance-up"]`. A natural peak.
+- **Side stretch**: hatha yoga · tight ribs, shallow breath, long sitting · 1 min · routine `side-stretch`
+- **Cat and cow, standing**: hatha yoga · stiff back, busy mind · 1–2 min · routine `cat-cow-standing`
+- **Roll down, roll up**: Pilates; somatic movement · back and neck, a reset, slowing down · 1–2 min · routine `roll-down`
+  Care: skip or go halfway with high blood pressure, glaucoma or dizziness.
+- **Big arm circles**: qigong and movement warm-ups · cold shoulders, low energy · 1 min · routine `arm-circles`
+- **March in place**: cross-body warm-ups · flat, sluggish, numb · 1 min · routine `march`
+- **Sit, stand, repeat**: functional strength · heavy body, wanting to feel strong · 1–2 min · routine `sit-to-stand`
+  Needs a sturdy chair; any depth counts.
 
 ## Meet: turning toward what's here
 

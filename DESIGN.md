@@ -77,8 +77,10 @@ Reliability here comes from six design decisions:
 | `library/compass.md` | how to read the moment and write the Reading |
 | `library/lenses.md` | the council: ~30 traditions, their questions, moves and cautions |
 | `library/practices.md` | the atlas: ~60 practices mapped to engine steps |
+| `library/routines.json` | ready-made movement routines: cues, poses and timing checked frame by frame |
+| `library/teachings.md` | short teachings: the idea, distinctions, common confusions, sources |
 | `library/arcs.md` | dramaturgy: pacing principles and nine arc patterns |
-| `library/craft.md` | voice, words to avoid, and the nine tests every experience must pass |
+| `library/craft.md` | voice, words to avoid, and the eleven tests every experience must pass |
 | `library/safety.md` | red flags, trauma-informed defaults, cautions, privacy |
 | `engine/template.html` | the experience player: a living sky, synthesized sound, 13 step types |
 | `engine/skies.json` | 15 sky states the arc moves through |
@@ -87,6 +89,8 @@ Reliability here comes from six design decisions:
 | `tools/preview.mjs` | walks an experience in headless Chromium and screenshots each step |
 | `tools/narration.mjs` | lists the lines to narrate and fetches the recorded clips |
 | `tools/poses.mjs` | renders every figure pose to a contact sheet |
+| `tools/routines.mjs` | renders each routine as a filmstrip and checks its poses and pacing |
+| `tools/expand.mjs` | turns `"routine": "<name>"` steps into full steps (used by build and narration) |
 | `examples/sample/` | a complete example experience |
 | `private/` | your sessions, reflections and profile (git-ignored while the repo is public) |
 

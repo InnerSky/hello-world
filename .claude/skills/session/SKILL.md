@@ -41,7 +41,7 @@ Then mirror it back to them in 3–5 lines: what you heard, what you sense they 
 make. If it's clear, go straight on and build; they can correct it later. Pause for confirmation
 only if you're genuinely torn between two different directions.
 
-## 3. Compose: `library/arcs.md`, `library/practices.md`, `library/craft.md`, `engine/SCHEMA.md`
+## 3. Compose: `library/arcs.md`, `library/practices.md`, `library/routines.json`, `library/teachings.md`, `library/craft.md`, `engine/SCHEMA.md`
 
 Write `private/sessions/<id>/experience.json`:
 - Start from an arc pattern; adapt the movements, skies and practices to this person.
@@ -55,6 +55,11 @@ Write `private/sessions/<id>/experience.json`:
 - Credit every practice in `lineage`.
 - Give every step a short `name`. Put a `figure` pose on every movement cue (poses list in
   `engine/SCHEMA.md`), and give every requirement an alternative (a song → or sing one; standing → or sit).
+- Build movement from routines (`"routine": "cat-stretch"`): checked cues, poses and timing.
+  Personalize the words with `cueText`, trim with `drop`. A new sequence gets checked with
+  `node tools/routines.mjs` before it's used; if it's good, add it to the library.
+- Consider one short teaching from `library/teachings.md` where it would land: after a practice,
+  before a reflection. Tie its last line to their words.
 - Don't preview the content on the threshold. Surprise is part of it.
 
 ## 4. Render and check

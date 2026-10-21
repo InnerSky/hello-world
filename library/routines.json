@@ -1,0 +1,282 @@
+{
+  "_about": "Movement routines: tested building blocks for experiences. A step with \"routine\": \"<name>\" takes the routine's title, lines, figure, cues (or breath pattern), timing and closing line, unless the step sets its own. Personalize with \"cueText\": {\"<index>\": \"new words\"} to change what a cue says while keeping its pose and timing. Every routine is checked frame by frame with `node tools/routines.mjs`. Keys starting with _ are notes, not routines.",
+
+  "cat-stretch": {
+    "type": "guided",
+    "title": "Wake up like a cat",
+    "purpose": "Morning stiffness, low energy, waking the body with pleasure.",
+    "minutes": 2.6,
+    "needs": "room to stand and reach overhead",
+    "cautions": "Tighten gently, never to strain. Skip the backward arch with a sore lower back.",
+    "lineage": { "name": "Pandiculation, the cat's stretch", "source": "Thomas Hanna, Hanna Somatics" },
+    "lines": [
+      "A cat never stretches to be productive. It stretches because it feels good.",
+      "Tighten a little first, then lengthen slowly, then let go completely. Sitting at the edge of a chair works too."
+    ],
+    "figure": "stand",
+    "ready": "Stand up, or sit at the edge of your seat. Begin when you're ready.",
+    "cues": [
+      { "text": "If a yawn wants to come, let it. Yawning is the body's own stretch.", "seconds": 9, "figure": "stand" },
+      { "text": "Make two loose fists and draw your arms in close. Gently tighten everything, as if you were curling up.", "seconds": 11, "figure": "curl" },
+      { "text": "Now slowly unfold. Arms long overhead, fingers wide, your spine reaching up.", "seconds": 12, "figure": "reach-up" },
+      { "text": "Stretch like the biggest yawn of the year, all the way out to the edges. Let a sound out if one comes.", "seconds": 12, "figure": "yawn" },
+      { "text": "And let it all go. Arms drop. Feel the difference.", "seconds": 9, "figure": "stand" },
+      { "text": "Right arm up and over to the left. Open the whole right side, from your fingertips down to your hip.", "seconds": 12, "figure": "bend-left" },
+      { "text": "Slowly back to center.", "seconds": 5, "figure": "stand" },
+      { "text": "Left arm up and over to the right. Long through the whole left side.", "seconds": 12, "figure": "bend-right" },
+      { "text": "Back to center. Let everything hang loose.", "seconds": 6, "figure": "stand" },
+      { "text": "Bend your knees a little and rest your hands on your thighs. Round your back like a cat, chin toward your chest.", "seconds": 12, "figure": "cat" },
+      { "text": "Now the other way: let your belly drop, chest forward, and look ahead.", "seconds": 10, "figure": "cow" },
+      { "text": "Once more, round and arch, as slowly as feels good.", "seconds": 12, "figure": ["cat", "cow"], "beat": 2.8 },
+      { "text": "Find one place that still feels tight, and give it a stretch of its own. Your way, no rules.", "seconds": 16, "figure": "yawn" }
+    ],
+    "after": "Notice how your body feels now, compared with a few minutes ago."
+  },
+
+  "side-stretch": {
+    "type": "guided",
+    "title": "Open both sides",
+    "purpose": "Tight ribs, shallow breath, sitting too long.",
+    "minutes": 1.2,
+    "needs": "room to reach sideways",
+    "cautions": "Lean only as far as stays comfortable in the lower back.",
+    "lineage": { "name": "Standing side bend", "source": "hatha yoga" },
+    "lines": ["Standing or sitting tall. Follow the figure, or move however feels good."],
+    "figure": "stand",
+    "cues": [
+      { "text": "Feet under your hips, knees soft, arms loose.", "seconds": 6, "figure": "stand" },
+      { "text": "Sweep both arms out to the sides and all the way up.", "seconds": 8, "figure": "reach-up" },
+      { "text": "Bring your right arm up and over toward the left. Let your left hand slide down your leg. Breathe into your right ribs.", "seconds": 14, "figure": "bend-left" },
+      { "text": "Back to the middle.", "seconds": 5, "figure": "reach-up" },
+      { "text": "Left arm up and over toward the right. Right hand slides down. Breathe into your left ribs.", "seconds": 14, "figure": "bend-right" },
+      { "text": "Let both arms float down.", "seconds": 7, "figure": "stand" }
+    ],
+    "after": "Notice how much room there is in your breath now."
+  },
+
+  "cat-cow-standing": {
+    "type": "guided",
+    "title": "Cat and cow, standing",
+    "purpose": "A stiff back and a busy mind: rhythmic movement that loosens the spine and paces the breath.",
+    "minutes": 1.3,
+    "needs": "room to bend forward a little",
+    "cautions": "Keep the arch small with a sensitive lower back. Seated version: hands on your knees at the edge of a chair.",
+    "lineage": { "name": "Cat and cow", "source": "hatha yoga" },
+    "lines": ["Knees soft, hands resting on your thighs. Let the breath set the pace."],
+    "figure": "hinge",
+    "cues": [
+      { "text": "Bend your knees a little and rest your hands on your thighs, back long and flat.", "seconds": 8, "figure": "hinge" },
+      { "text": "Breathing out, round your back up toward the ceiling and tuck your chin.", "seconds": 7, "figure": "cat" },
+      { "text": "Breathing in, let your belly drop, lift your chest and look ahead.", "seconds": 7, "figure": "cow" },
+      { "text": "Keep going at the pace of your breath. Round as you breathe out, arch as you breathe in.", "seconds": 24, "figure": ["cat", "cow"], "beat": 3 },
+      { "text": "Come back to a flat back, then roll up slowly to standing.", "seconds": 9, "figure": "stand" }
+    ],
+    "after": "Stand still for a moment and feel your spine."
+  },
+
+  "roll-down": {
+    "type": "guided",
+    "title": "Roll down, roll up",
+    "purpose": "Releasing the back and neck; a reset after sitting; slowing down.",
+    "minutes": 1.3,
+    "needs": "room to fold forward",
+    "cautions": "Knees soft the whole time. Skip or go only halfway with high blood pressure, glaucoma or dizziness.",
+    "lineage": { "name": "Standing roll-down", "source": "Pilates; somatic movement" },
+    "lines": ["Feet hip-width apart, knees soft. Go only as far down as feels good."],
+    "figure": "stand",
+    "cues": [
+      { "text": "Let your chin drop toward your chest.", "seconds": 6, "figure": "roll-1" },
+      { "text": "Let the weight of your head draw you down, one bone at a time. Shoulders, then upper back.", "seconds": 9, "figure": "roll-2" },
+      { "text": "Keep rolling down. Knees bend as much as they need to. Let your arms and head hang.", "seconds": 10, "figure": "roll-3" },
+      { "text": "Hang here. Maybe sway a little, or nod your head yes and no.", "seconds": 10, "figure": "roll-3" },
+      { "text": "Slowly roll back up, stacking one bone on top of the other. Your head comes up last.", "seconds": 12, "figure": "roll-1" },
+      { "text": "Stand tall and let your breath settle.", "seconds": 6, "figure": "stand" }
+    ],
+    "after": "Notice the length in your back."
+  },
+
+  "neck-release": {
+    "type": "guided",
+    "title": "Let the neck go",
+    "purpose": "Screen tension, a heavy head, holding stress in the shoulders and jaw.",
+    "minutes": 1.3,
+    "needs": "nothing; sitting or standing",
+    "cautions": "Small and slow. No full circles, and stop at any tingling or dizziness.",
+    "lineage": { "name": "Neck release", "source": "somatic movement; physical therapy" },
+    "lines": ["Sitting or standing tall. Move slowly, and only as far as is easy."],
+    "figure": "stand",
+    "cues": [
+      { "text": "Let your shoulders drop away from your ears. Unclench your jaw.", "seconds": 7, "figure": "stand" },
+      { "text": "Tip your right ear toward your right shoulder. Let the weight of your head do the work.", "seconds": 10, "figure": "neck-right" },
+      { "text": "Back to center.", "seconds": 4, "figure": "stand" },
+      { "text": "Left ear toward your left shoulder. Breathe into the right side of your neck.", "seconds": 10, "figure": "neck-left" },
+      { "text": "Back to center.", "seconds": 4, "figure": "stand" },
+      { "text": "Let your chin sink toward your chest. Feel the back of your neck lengthen.", "seconds": 9, "figure": "chin-down" },
+      { "text": "Bring your head back up, slowly, until it feels balanced on top of your spine.", "seconds": 8, "figure": "stand" }
+    ],
+    "after": "Notice how your head sits on your shoulders now."
+  },
+
+  "arm-circles": {
+    "type": "guided",
+    "title": "Big arm circles",
+    "purpose": "Warming the shoulders, raising energy, loosening the upper back.",
+    "minutes": 1,
+    "needs": "room to swing your arms",
+    "cautions": "Keep the circles comfortable, smaller if a shoulder complains.",
+    "lineage": { "name": "Arm circles", "source": "qigong and movement warm-ups" },
+    "lines": ["Standing, feet planted. Slow and smooth, like drawing big circles in the air."],
+    "figure": "stand",
+    "cues": [
+      { "text": "Bring both arms forward, then up, then out wide, then down. One big, slow circle.", "seconds": 12, "figure": ["arms-forward@40", "reach-up@40", "arms-wide@40", "wide-low@40"], "beat": 2.2 },
+      { "text": "Keep circling. Let your breath follow: in as the arms rise, out as they come down.", "seconds": 18, "figure": ["arms-forward@40", "reach-up@40", "arms-wide@40", "wide-low@40"], "beat": 2.2 },
+      { "text": "Now reverse: out wide, up, forward and down.", "seconds": 16, "figure": ["wide-low@40", "arms-wide@40", "reach-up@40", "arms-forward@40"], "beat": 2.2 },
+      { "text": "Let your arms hang and feel the warmth in your shoulders.", "seconds": 7, "figure": "stand" }
+    ]
+  },
+
+  "shake-out": {
+    "type": "guided",
+    "title": "Shake it out",
+    "purpose": "Restless or tired-and-wired energy, after stress or conflict; discharge before settling.",
+    "minutes": 1.1,
+    "needs": "room to move; seated works too",
+    "cautions": "Keep it loose and small at first. Seated: shake your hands and bounce your knees.",
+    "lineage": { "name": "Shaking", "source": "qigong; David Berceli's TRE" },
+    "lines": ["Knees soft, everything loose. There's no wrong way to do this."],
+    "figure": "shake-b",
+    "cues": [
+      { "text": "Start by shaking out your hands, like flicking off water.", "seconds": 9, "figure": ["shake-a", "shake-b"], "beat": 0.35 },
+      { "text": "Let it spread to your arms and shoulders.", "seconds": 9, "figure": ["shake-a", "shake-b"], "beat": 0.35 },
+      { "text": "Now a gentle bounce through your knees, so the whole body jiggles.", "seconds": 14, "figure": ["shake-a", "shake-b"], "beat": 0.3 },
+      { "text": "Let your jaw go loose. Add a sound if one wants out.", "seconds": 12, "figure": ["shake-a", "shake-b"], "beat": 0.3 },
+      { "text": "And stop. Stand still and feel the buzz.", "seconds": 9, "figure": "stand" }
+    ]
+  },
+
+  "march": {
+    "type": "guided",
+    "title": "March in place",
+    "purpose": "Flat, sluggish or numb; bringing energy up gently and rhythmically.",
+    "minutes": 1.1,
+    "needs": "a little floor space",
+    "cautions": "Lift your knees only as high as is comfortable; hold a chair or wall for balance if needed.",
+    "lineage": { "name": "Marching", "source": "movement and cross-body warm-ups" },
+    "lines": ["Stand where you can move a little. Keep a hand on a chair if you'd like the balance."],
+    "figure": "stand",
+    "cues": [
+      { "text": "Start marching on the spot, lifting one knee, then the other, arms swinging.", "seconds": 14, "figure": ["march-left", "march-right"], "beat": 0.6 },
+      { "text": "Lift your knees a little higher, if that feels good.", "seconds": 14, "figure": ["march-left", "march-right"], "beat": 0.55 },
+      { "text": "Let the rhythm wake you up. Breathe out on every other step.", "seconds": 14, "figure": ["march-left", "march-right"], "beat": 0.55 },
+      { "text": "Slow down, step by step.", "seconds": 7, "figure": ["march-left", "march-right"], "beat": 1.1 },
+      { "text": "And come to stillness.", "seconds": 5, "figure": "stand" }
+    ],
+    "after": "Feel your heart and your breath. That's your energy, awake."
+  },
+
+  "sit-to-stand": {
+    "type": "guided",
+    "title": "Sit, stand, repeat",
+    "purpose": "Low energy, a heavy body, wanting to feel strong; gentle strength that wakes the legs.",
+    "minutes": 1.3,
+    "needs": "a sturdy chair behind you",
+    "cautions": "Go as low as is comfortable; sitting fully down each time is fine. Stop with knee pain.",
+    "lineage": { "name": "Chair squat", "source": "functional strength training" },
+    "lines": ["Stand in front of a chair, feet a little wider than your hips."],
+    "figure": "stand",
+    "cues": [
+      { "text": "Reach your arms forward and sit your hips back, as if to sit down. Lightly touch the chair.", "seconds": 10, "figure": "squat", "beat": 3 },
+      { "text": "Press through your feet and stand all the way up.", "seconds": 6, "figure": "stand@70" },
+      { "text": "Again: down slowly, up with energy. Breathe out as you rise.", "seconds": 24, "figure": ["stand@70", "squat"], "beat": 2.2 },
+      { "text": "Stand tall. Feel your legs, strong and warm.", "seconds": 7, "figure": "stand" }
+    ]
+  },
+
+  "breath-of-joy": {
+    "type": "breath",
+    "title": "Breath of Joy",
+    "purpose": "Flat, low energy, morning; a fast, playful lift.",
+    "minutes": 1,
+    "needs": "room to swing your arms",
+    "cautions": "Slow down or breathe normally if light-headed. Keep the fold small with high blood pressure, glaucoma or after a head injury.",
+    "lineage": { "name": "Breath of Joy", "source": "Kripalu yoga tradition" },
+    "lines": [
+      "Three quick sips of air with your arms: forward, out wide, and up. Then a big \"ha!\" as you swing them down and soften your knees.",
+      "If you feel light-headed, slow down or breathe normally."
+    ],
+    "pattern": [
+      { "kind": "in", "seconds": 1.2, "label": "in · arms forward", "to": 0.72, "figure": "bj-forward" },
+      { "kind": "in", "seconds": 1.2, "label": "in · arms out wide", "to": 0.88, "figure": "bj-wide" },
+      { "kind": "in", "seconds": 1.2, "label": "in · arms up high", "to": 1.05, "figure": "bj-up" },
+      { "kind": "out", "seconds": 2.2, "label": "ha! · swing down", "to": 0.5, "say": "ha", "figure": "fold" },
+      { "kind": "hold", "seconds": 1.6, "label": "rise slowly", "to": 0.6, "figure": "soft-knees" }
+    ],
+    "cycles": 7,
+    "ready": "feet a little wider than your hips",
+    "after": "Stand still. Feel the buzz."
+  },
+
+  "one-song-dance": {
+    "type": "guided",
+    "title": "One song",
+    "purpose": "Enliven, savor, play; a natural peak.",
+    "minutes": 3.4,
+    "needs": "a song they love (or one they can sing or hum), a little space",
+    "cautions": "Any size of movement counts, including seated.",
+    "lineage": { "name": "Free dance and play", "source": "Gabrielle Roth's 5Rhythms; Stuart Brown" },
+    "lines": [
+      "Put on one song you love, the kind that makes your body want to move. Or sing one you know.",
+      "The music leads. Glance here if you want a nudge, and come back when the song ends."
+    ],
+    "quiet": true,
+    "figure": "stand",
+    "ready": "The room is yours. Press play, then Begin.",
+    "cues": [
+      { "text": "Start small. Let one part of you answer the music: a finger, your head, a foot.", "seconds": 22, "figure": ["sway-left", "sway-right"], "beat": 1.4 },
+      { "text": "Let it travel. Shoulders. Ribs. Hips.", "seconds": 25, "figure": ["sway-left", "sway-right"], "beat": 1.2 },
+      { "text": "No one is watching. There's nothing to get right.", "seconds": 25, "figure": ["dance-low", "dance-up"], "beat": 1.3 },
+      { "text": "Let it get bigger. Arms. Feet. Take up space.", "seconds": 30, "figure": ["dance-low", "dance-up"], "beat": 1.1 },
+      { "text": "Sing along, hum, laugh. Make whatever sound wants out.", "seconds": 30, "figure": ["dance-up", "sway-left", "dance-low", "sway-right"], "beat": 1.1 },
+      { "text": "Are you enjoying this? You don't have to be. Just notice.", "seconds": 30, "figure": ["sway-left", "sway-right"], "beat": 1.4 },
+      { "text": "Let the rest of the song carry you all the way to the end.", "seconds": 40, "figure": ["dance-low", "dance-up"], "beat": 1.2 }
+    ],
+    "after": "Let the song end. Stand still and feel what's still moving."
+  },
+
+  "self-holding": {
+    "type": "guided",
+    "title": "Holding yourself",
+    "purpose": "Activated, tender, self-critical; soothing through touch and warmth.",
+    "minutes": 1.5,
+    "needs": "nothing; sitting or lying down is fine",
+    "cautions": "If touch doesn't feel safe today, rest your hands on your lap instead.",
+    "lineage": { "name": "Self-holding and soothing touch", "source": "Peter Levine; Kristin Neff and Christopher Germer" },
+    "lines": ["Sitting or standing, however you're most comfortable."],
+    "figure": "heart-belly",
+    "cues": [
+      { "text": "Place one hand on your heart, and the other on your belly.", "seconds": 8, "figure": "heart-belly" },
+      { "text": "Feel the warmth of your hands. Let them be heavy.", "seconds": 12, "figure": "heart-belly" },
+      { "text": "Notice your breath moving under your hands, without changing it.", "seconds": 14, "figure": "heart-belly" },
+      { "text": "Stay as long as feels right. Something in you might soften, or not. Either is fine.", "seconds": 22, "figure": "heart-belly" },
+      { "text": "When you're ready, let your hands come to rest.", "seconds": 8, "figure": "stand" }
+    ]
+  },
+
+  "seated-arrival": {
+    "type": "guided",
+    "title": "Arriving in your seat",
+    "purpose": "Before a sit, inquiry or writing; finding a stable, upright, easy posture.",
+    "minutes": 1,
+    "needs": "a chair or cushion",
+    "cautions": "Any comfortable position works, including lying down.",
+    "lineage": { "name": "Mindful posture", "source": "Zen and Insight Meditation teaching" },
+    "lines": ["On a chair or a cushion, however you can be upright and at ease."],
+    "figure": "sit",
+    "cues": [
+      { "text": "Feel what's underneath you: the seat, the floor, the ground holding you up.", "seconds": 9, "figure": "sit" },
+      { "text": "Let your spine rise gently, as if a thread lifted the crown of your head.", "seconds": 9, "figure": "sit-tall" },
+      { "text": "Let your shoulders and hands rest. Soften your face.", "seconds": 9, "figure": "sit-tall" },
+      { "text": "Let your breath find its own rhythm. Nothing to do.", "seconds": 12, "figure": "sit-tall" }
+    ]
+  }
+}
