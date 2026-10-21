@@ -64,7 +64,17 @@ async function walk(label, viewport) {
     if (type === "body") await screen.locator(".chip").nth(2).click();
     if (type === "release") { await screen.locator("textarea").fill("the thing I'm putting down"); await screen.locator(".row .btn").click(); }
     if (["breath", "guided", "sit"].includes(type)) { const b = screen.locator(".btn").first(); if (await b.count()) await b.click(); }
-    if (type === "card") { await page.waitForTimeout(500); await page.screenshot({ path: path.join(outDir, `${label}-${String(visited.length).padStart(2, "0")}-card-full.png`), fullPage: true }); break; }
+    if (type === "card") {
+      await page.waitForTimeout(500);
+      // the look-back screen: open it, expand the first step, mark it, and capture it
+      await page.locator("#look-back").click();
+      await page.locator(".lb-head").first().click();
+      await page.locator(".lb-body:not([hidden]) .chip").first().click();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: path.join(outDir, `${label}-${String(visited.length).padStart(2, "0")}-look-back.png`) });
+      await page.locator(".overlay.lookback .actions .btn").click();
+      break;
+    }
     // wait for Continue (not Skip) to be offered, then take it
     const ok = await page.waitForFunction(() => {
       const b = document.getElementById("next");

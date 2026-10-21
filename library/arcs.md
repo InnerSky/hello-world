@@ -27,7 +27,8 @@ Movements can be renamed, merged or added to fit the experience ("Harbor", "Clea
 5. **Rhythm.** Vary the mode: read → breathe → write → sit → choose. Never more than two writing
    steps in a row, never more than about 90 seconds of reading in a row.
 6. **The peak sits at roughly two-thirds.** The Turn is the high point. Afterwards, everything
-   gets lighter and simpler.
+   gets lighter and simpler. People remember the peak and the end (the peak–end rule), so craft
+   both with the most care.
 7. **End lighter than the middle, with agency.** The last steps are about what *they* choose and carry.
 8. **Respond, don't just script.** Use at least one choice point that changes what comes next
    (`when`), and echo what they wrote (`{{stepId}}`) so the experience is clearly listening.

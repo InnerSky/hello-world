@@ -47,6 +47,21 @@ Adapt every one of them to the person. Use their words, their situation, their i
 - **NSDR / brief yoga nidra**: Satyananda; Huberman's NSDR · depleted, evening · 6–15 min · `guided`
   Care: in a shut-down state, keep it short and eyes-open optional.
 
+## Wake and enliven: raising energy through the body
+
+- **Cat stretch (pandiculation)**: Thomas Hanna's somatics · morning stiffness, flat, tight · 2–3 min · `guided` with figures
+  Tighten a little, lengthen slowly all the way out, let go completely. Poses: `curl` → `reach-up` →
+  `yawn` → `stand`, side bends `bend-left` / `bend-right`, then `cat` / `cow` with knees soft and
+  hands on thighs. Inherently pleasurable: "a cat doesn't stretch to be productive".
+- **Breath of Joy**: Kripalu yoga · flat, low energy, morning · 1 min · `breath` with a custom pattern and figures
+  Three sips of air with the arms (`bj-forward`, `bj-wide`, `bj-up`), then "ha!" swinging down
+  (`fold`), rising (`soft-knees`). Care: slow down if light-headed; keep the fold small with high
+  blood pressure or after head injury.
+- **Shake it out**: TRE; qigong · restless, mixed · 1 min · `guided`, cue figure `["shake-a", "shake-b"]` with `beat: 0.4`
+- **One-song dance**: Gabrielle Roth's 5Rhythms; Stuart Brown on play · Enliven, Savor · 3–4 min · `guided` with `quiet: true`
+  A song they love, or one they sing or hum. Cues build from one body part to the whole body.
+  Figure loops `["sway-left", "sway-right"]`, then `["dance-low", "dance-up"]`. A natural peak.
+
 ## Meet: turning toward what's here
 
 - **Body map**: somatic therapies · all · 0.5 min · `body`

@@ -20,6 +20,8 @@ catch (e) { console.error(`✗ can't read ${src}: ${e.message}`); process.exit(1
 
 const skies = JSON.parse(fs.readFileSync(path.join(root, "engine/skies.json"), "utf8"));
 const template = fs.readFileSync(path.join(root, "engine/template.html"), "utf8");
+const poses = JSON.parse(fs.readFileSync(path.join(root, "engine/poses.json"), "utf8"));
+const figure = fs.readFileSync(path.join(root, "engine/figure.js"), "utf8");
 
 const errors = [], warnings = [];
 const err = m => errors.push(m), warn = m => warnings.push(m);
@@ -59,6 +61,8 @@ steps.forEach((s, i) => {
   usedMoves.add(movement);
   if (s.sky && !skyNames.includes(s.sky)) err(`${at}: unknown sky "${s.sky}"`);
   if (s.type === "breath" && s.pattern && !Array.isArray(s.pattern) && !BREATH.includes(s.pattern)) err(`${at}: unknown breath pattern "${s.pattern}" (known: ${BREATH.join(", ")})`);
+  const figs = [].concat(s.figure || [], s.figureEnd || [], ...(s.cues || []).map(c => c && c.figure || []), ...(Array.isArray(s.pattern) ? s.pattern.map(p => p.figure || []) : []));
+  for (const f of figs.flat()) if (typeof f === "string" && (!poses[f] || f.startsWith("_"))) err(`${at}: unknown pose "${f}" (see engine/poses.json)`);
   if (s.type === "choose" && Array.isArray(s.options) && s.options.length < 2) warn(`${at}: a choice with fewer than 2 options`);
   if (s.type === "scale" && s.measure && !["before", "after"].includes(s.measure)) err(`${at}: measure must be "before" or "after"`);
   for (const c of [].concat(s.when || [])) {
@@ -113,7 +117,9 @@ const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&l
 const html = template
   .replace("__TITLE__", escHtml(X.title))
   .replace("/*__EXPERIENCE__*/null", () => json)
-  .replace("/*__SKIES__*/null", () => skiesJson);
+  .replace("/*__SKIES__*/null", () => skiesJson)
+  .replace("/*__POSES__*/null", () => JSON.stringify(poses).replace(/</g, "\\u003c"))
+  .replace("/*__FIGURE__*/", () => figure);
 const out = path.join(dir, "experience.html");
 fs.writeFileSync(out, html);
 

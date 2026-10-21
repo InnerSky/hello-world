@@ -16,6 +16,31 @@ before it ships.
 - **Warm, not sweet. Wise, not preachy.** Talk like a trusted friend who happens to know a lot.
 - **Honest.** Don't promise outcomes ("you will feel calm"). Offer possibilities ("you may notice…").
 
+## Freedom and alternatives
+
+- **The person is always free to adapt.** The threshold says so by default ("Everything here was
+  made for you, and you can change any of it…"). Mean it in every step.
+- **Every requirement gets an alternative.** A song to play → "or sing or hum one you know". Standing →
+  "or sit tall". Making sound → "or breathe it silently". A walk outside → "or walk around the room".
+  One person sang instead of playing a song, and it was still a highlight.
+
+## Showing movement
+
+People feel unsure when a movement is only described. Every physical step needs:
+1. a starting position ("feet under your hips, knees soft"),
+2. one action per cue, named with body landmarks ("right arm up and over toward the left"),
+3. the quality ("slowly", "as far as is comfortable"),
+4. **a figure pose on every cue** (see `engine/SCHEMA.md`), so they can see it as well as read it.
+
+## Peak, end and surprise
+
+- People remember an experience by its **peak and its end** (Kahneman's peak–end rule). Design
+  one clear peak (usually the Turn) and craft the ending (the card, the last words). If those land,
+  the whole session is remembered as good.
+- **Don't reveal the agenda.** Not knowing what comes next is part of the pleasure. The threshold
+  says how long it takes and what to have ready, not what will happen.
+- Give every step a short `name` so the look-back list reads clearly.
+
 ## Avoid
 
 - Stock wellness phrases: *journey, embrace, let go of what no longer serves you, hold space,
@@ -44,7 +69,10 @@ before it ships.
    difficulty? Do the care notes from the Reading hold? (See `safety.md`.)
 8. **Fallback test.** Read each `companion` fallback as if Claude weren't available. Is it
    still good? It should be written as carefully as the rest.
-9. **Time test.** Does the build estimate match what they asked for?
+9. **Time test.** Does the build estimate match what they asked for? Leave slack: real sessions
+   run longer than the estimate when something deep happens.
+10. **Movement test.** Does every physical cue have a starting position, a clear action and a figure?
+    Is there an alternative for every requirement (music, standing, sound, space)?
 
 ## Writing the companion instructions
 

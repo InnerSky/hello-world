@@ -18,9 +18,11 @@ Read `DESIGN.md` for the idea and `.claude/skills/session/SKILL.md` for how to r
 
 ## Working on the system
 
-- Engine: `engine/template.html` (one file: CSS, markup and JS) + `engine/skies.json`. The build
-  injects the script and skies. Keep `engine/SCHEMA.md`, `tools/build.mjs` (TYPES, BREATH) and
-  the engine's renderers in sync when adding a step type.
+- Engine: `engine/template.html` (one file: CSS, markup and JS) + `engine/skies.json`,
+  `engine/poses.json` and `engine/figure.js` (the demonstrating figure). The build injects the
+  script, skies, poses and figure. Check new poses with `node tools/poses.mjs`.
+- Keep `engine/SCHEMA.md`, `tools/build.mjs` (TYPES, BREATH) and the engine's renderers in sync
+  when adding a step type.
 - After engine changes, rebuild and walk the sample: `node tools/build.mjs examples/sample &&
   node tools/preview.mjs examples/sample --desktop`.
 - Match the existing style: plain JS, no dependencies, small helpers, comments only where they help.

@@ -53,12 +53,16 @@ Write `private/sessions/<id>/experience.json`:
   practice and tiny next step.
 - `context` gives the companion a brief, private summary: what matters and what to avoid.
 - Credit every practice in `lineage`.
+- Give every step a short `name`. Put a `figure` pose on every movement cue (poses list in
+  `engine/SCHEMA.md`), and give every requirement an alternative (a song → or sing one; standing → or sit).
+- Don't preview the content on the threshold. Surprise is part of it.
 
 ## 4. Render and check
 
 ```bash
 node tools/build.mjs private/sessions/<id>      # validates, estimates timing, writes experience.html
 node tools/preview.mjs private/sessions/<id>    # walks every step in Chromium, screenshots to preview/
+node tools/preview.mjs private/sessions/<id> --choose <stepId>=<n>   # walk another branch
 ```
 
 Fix every build error. Look at 3–4 screenshots (threshold, the Turn, the card), plus any step
@@ -78,7 +82,8 @@ it was when you're done. I'll read what you wrote." Save the URL in `private/log
 ## 6. Integrate (when they return)
 
 - Read their run: `ArtifactData` `list` on `runs` for that artifact URL. Look at the measures, the
-  path they took and what they wrote. If the database is unavailable, ask them to paste the Copy text.
+  path they took, what they wrote and their per-step `feedback` from the look-back screen. If the
+  database is unavailable, ask them to paste the Copy text.
 - Reflect back what you notice, briefly and warmly. Ask what landed, what didn't, and what surprised them.
 - Write `private/sessions/<id>/integration.md`. Update `private/profile.md` (create it from the
   template below if missing): practices that landed (★) and didn't (✗), language that resonates,

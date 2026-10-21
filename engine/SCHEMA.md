@@ -20,6 +20,8 @@ Artifact. See `examples/sample/experience.json` for a complete working example.
   "measure": { "label": "How much room there is inside", "low": "crammed", "high": "spacious" },
   "sound": { "root": 98, "bell": 392, "default": "on" },   // drone pitch (Hz), bell pitch, on/off
   "vars": { "name": "Sam" },               // compose-time values usable as {{name}}
+  "voices": ["Andrew", "Ryan"],            // preferred voices for guidance, best first (the person can change it)
+  "freedom": "…",                           // optional: replaces the default "you can change any of this" line on the threshold
   "movements": [ { "id": "arrive", "name": "Arrive", "sky": "overcast" }, … ],
   "steps": [ … ],
   "lineage": [ { "name": "Cyclic sighing", "source": "Balban, Huberman et al., 2023" }, … ]
@@ -42,6 +44,7 @@ Artifact. See `examples/sample/experience.json` for a complete working example.
 | Field | Meaning |
 |---|---|
 | `id` | unique, required |
+| `name` | short label shown in the look-back list (e.g. "Cat stretch"); give every step one |
 | `type` | one of the types below, required |
 | `movement` | the movement this step starts (later steps inherit it) |
 | `sky` | override the movement's sky for this step |
@@ -56,9 +59,9 @@ Artifact. See `examples/sample/experience.json` for a complete working example.
 |---|---|---|
 | `threshold` | opening screen: title, lines, length, sound/voice toggles, Begin | `lines`, `eyebrow`, `cta` |
 | `text` | lines that appear one by one; tap to show all | `lines`, `style` (`poem` / `large` / `small`, combinable: `"poem large"`), `pace` (sec between lines), `hold` (sec before Continue), `attribution`, `voice: true` |
-| `breath` | animated orb paces the breath for N cycles | `pattern`: `sigh` `resonance` `extended` `box` `4-7-8` `awaken` `hum`, or `[{kind:"in"/"out"/"hold", seconds, label, to}]`; `cycles`; `ready`; `after` |
-| `guided` | timed cues, one at a time, with progress and a pause button | `cues: [{text, seconds}]`, `ready`, `after`, `bell: false` |
-| `sit` | silent timed sit with a bell at each end | `seconds`, `anchor`, `after`, `showTime: false` |
+| `breath` | animated orb paces the breath for N cycles | `pattern`: `sigh` `resonance` `extended` `box` `4-7-8` `awaken` `hum`, or `[{kind:"in"/"out"/"hold", seconds, label, to, figure}]` (with figures, the figure replaces the orb); `cycles`; `ready`; `after` |
+| `guided` | timed cues, one at a time, with progress and a pause button | `cues: [{text, seconds, figure, beat}]`, `figure` (starting pose), `ready`, `after`, `bell: false`, `preview: false` |
+| `sit` | silent timed sit with a bell at each end | `seconds`, `anchor`, `after`, `showTime: false`, `figure` (a still pose, e.g. `"sit"`) |
 | `write` | free writing | `prompt`, `sub`, `placeholder`, `rows`, `seconds` (gentle flow timer), `private: true` (never leaves the device) |
 | `choose` | single or multiple choice | `prompt`, `options: [{label, value, hint}]` or strings, `multi`, `allowOther` |
 | `words` | pick words from chips, or add your own | `prompt`, `words: []`, `max`, `allowOwn: false` |
@@ -67,6 +70,23 @@ Artifact. See `examples/sample/experience.json` for a complete working example.
 | `release` | write something, then watch it dissolve. Not saved unless `keep: true` | `prompt`, `placeholder`, `release` (button label), `after: [lines]` |
 | `companion` | live Claude responds to what they've written, with an offline fallback | `instruction`, `fallback` (required), `include: [stepIds]`, `turns` (allow back-and-forth), `maxWords`, `tier` (`quick`/`default`/`complex`) |
 | `card` | closing card to keep: anchor, pocket practice, next step, before→after, lineage. Copy and save | `title`, `anchor`, `lines`, `practice: {name, lines}`, `next`, `eyebrow` |
+
+## The figure: showing movements
+
+Any movement should be shown, not only described. Steps with poses get a simple animated figure
+that demonstrates them in time with the cues (`engine/figure.js`, poses in `engine/poses.json`).
+
+- On a `guided` cue: `"figure": "reach-up"` moves to that pose at the start of the cue (over `beat`
+  seconds, default 1.6); `"figure": ["cat", "cow"]` loops between poses (`beat` per move, default 2.2).
+- On a custom `breath` phase: `"figure": "bj-up"` moves to the pose over the length of the phase.
+- Before the person presses Begin, the figure previews the whole sequence on a slow loop.
+- Front-facing poses are mirror images, like an instructor facing a class: cue "right arm over to
+  the left" with `bend-left`.
+
+Poses: `stand` `stand-3q` `stand-side` `soft-knees` `reach-up` `yawn` `curl` `arms-wide` `bend-left`
+`bend-right` `heart` `belly` `open-chest` `nod` `shake-a` `shake-b` `sway-left` `sway-right` `dance-up`
+`dance-low` `cat` `cow` `fold` `bj-forward` `bj-wide` `bj-up` `sit`. To add one, edit `poses.json` and
+check it with `node tools/poses.mjs` (writes a contact sheet to `engine/preview/poses.png`).
 
 ## Branching
 
@@ -86,5 +106,11 @@ Artifact. See `examples/sample/experience.json` for a complete working example.
 
 When the page runs on claude.ai, each run is saved to the artifact's private database as
 `runs/<runId>`, readable only by the owner: `{experience, title, startedAt, updatedAt, completed,
-measure: {before, after}, path: [stepIds], answers: {stepId: {type, prompt, value, label?}}}`.
+measure: {before, after}, path: [stepIds], answers: {stepId: {type, prompt, value, label?}},
+feedback: {stepId: {name, reaction: "helped" | "okay" | "not", note}, _overall: {note}}}`.
+Companion answers also record `live` and the model `tier` that answered.
+
+**Look back.** The closing card offers "Look back at the steps": every step they went through,
+which they can tap to see again and mark *helped / okay / didn't help*, with an optional note.
+That feedback is saved with the run, and Claude reads it during integration.
 `private` steps and released text are never saved. Elsewhere, progress lives in the browser only.

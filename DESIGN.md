@@ -90,6 +90,14 @@ One page, no dependencies besides fonts. It's designed to feel like a quiet room
   rain → clearing → golden), so the visual journey mirrors the inner one. Night skies have stars.
 - **Sound.** A soft synthesized drone with moving air that swells with the breath, and a
   singing-bowl bell at each new movement. Optional voice guidance uses the browser's speech.
+- **A demonstrating figure.** Movements are shown by a simple animated figure that moves in time
+  with the cues and breath, and previews the whole sequence before you start.
+- **Natural voices.** Voice guidance prefers natural voices (Andrew, Ryan and others in Microsoft
+  Edge; Enhanced and Premium voices on Apple devices), with a voice picker on the first screen.
+- **Freedom by default.** The first screen says you can change anything: adjust a stretch, sing
+  instead of playing a song, skip or invent.
+- **Look back.** After the closing card, every step can be revisited and marked helped / okay /
+  didn't help, with a note. Claude reads that feedback when you come back.
 - **13 step types**: threshold, text, breath (animated orb with 7 patterns), guided (timed cues),
   sit, write (with an optional flow timer), choose, words, scale, body map, release (your words
   dissolve), companion (live Claude) and the closing card.

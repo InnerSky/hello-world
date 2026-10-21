@@ -35,6 +35,7 @@
 :root[data-ink="light"] { color-scheme: dark; }
 html { height: 100%; box-sizing: border-box; }
 *, *::before, *::after { box-sizing: inherit; }
+[hidden] { display: none !important; }
 body {
   height: 100%; margin: 0; overflow: hidden;
   background: var(--sky-mid); color: var(--ink);
@@ -106,6 +107,9 @@ h2 { font-size: var(--s-1); line-height: 1.3; }
   background: var(--veil); color: var(--ink); cursor: pointer; font: 500 var(--s--1)/1.1 var(--font-body);
 }
 .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--sky-mid); }
+.freedom { margin: 0; max-width: 30rem; font-family: var(--font-display); font-size: var(--s-0); line-height: 1.45; color: var(--ink-soft); text-shadow: var(--lift); }
+.voice-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.voice-pick select { flex: 1 1 12rem; min-width: 0; max-width: 100%; padding: .62em .9em; border-radius: 999px; border: 1px solid var(--rule); background: var(--veil); color: var(--ink); font: 500 var(--s--1)/1.2 var(--font-body); }
 .note-small { margin: 0; max-width: 30rem; font-size: var(--s--1); color: var(--ink-soft); }
 .note-small a { color: inherit; }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -179,6 +183,17 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 @keyframes settle { 0%, 100% { transform: scale(.88); opacity: .5; } 50% { transform: scale(1); opacity: 1; } }
 .time { margin: 0; font-size: var(--s--1); letter-spacing: .06em; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
+/* the demonstrating figure */
+.figure-wrap { display: grid; justify-items: center; gap: .3rem; }
+.figure { width: min(52vw, 220px); max-width: 100%; height: auto; max-height: 34vh; overflow: visible; }
+.fg-limb, .fg-torso { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+.fg-limb { stroke-width: 7; }
+.fg-torso { stroke-width: 11; }
+.fg-head { fill: var(--veil-strong); stroke: var(--ink); stroke-width: 6; }
+.fg-hand { fill: var(--ink); }
+.fg-ground { stroke: var(--ink-faint); stroke-width: 2; stroke-linecap: round; }
+.figure-note { margin: 0; font-size: var(--s--1); color: var(--ink-soft); }
+
 /* body map */
 .bodymap { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 1.2rem; align-items: center; }
 @media (max-width: 440px) { .bodymap { grid-template-columns: minmax(0, 130px) minmax(0, 1fr); gap: .8rem; } }
@@ -225,6 +240,27 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
   background: var(--scrim); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
 }
 .overlay .panel { display: grid; gap: 1.1rem; max-width: 30rem; }
+
+/* look back: feedback on individual steps */
+.overlay.lookback { place-items: start center; z-index: 25; }
+.overlay.lookback .panel { width: 100%; max-width: var(--col); padding-block: 8px 32px; }
+.lb-list { display: grid; }
+.lb-row { border-bottom: 1px solid var(--rule); }
+.lb-head {
+  display: grid; grid-template-columns: 5.6rem minmax(0, 1fr) auto; align-items: baseline; gap: 10px; width: 100%;
+  padding: .85em .2em; border: 0; background: none; color: var(--ink); text-align: left; cursor: pointer;
+  font: 500 var(--s-0)/1.35 var(--font-body);
+}
+.lb-move { font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .08em; color: var(--ink-soft); }
+.lb-badge { font-size: var(--s--1); color: var(--accent); white-space: nowrap; }
+.lb-body { display: grid; gap: .8rem; padding: 0 .2em 1rem; }
+.recap { display: grid; gap: .45rem; padding: .85em 1em; border-radius: 12px; background: var(--veil); }
+.recap p, .recap ul { margin: 0; }
+.recap ul { display: grid; gap: .25rem; padding-left: 1.1em; font-size: var(--s--1); color: var(--ink-soft); }
+.recap-title { font-family: var(--font-display); }
+.recap-answer { display: grid; gap: .15rem; font-size: var(--s--1); }
+.recap-answer span:last-child { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 420px) { .lb-head { grid-template-columns: minmax(0, 1fr) auto; } .lb-move { grid-column: 1 / -1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .screen, .lines.staged p, .cue, .attrib { transition-duration: .01s !important; }
@@ -282,7 +318,9 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 "use strict";
 const X = /*__EXPERIENCE__*/null;
 const SKIES = /*__SKIES__*/null;
+const POSES = /*__POSES__*/null;
 if (!X || !SKIES) { document.getElementById("stage").textContent = "This page is the engine template. Build an experience with tools/build.mjs."; return; }
+/*__FIGURE__*/
 
 const TS = Number(window.__INNERSKY_TIMESCALE) > 0 ? Number(window.__INNERSKY_TIMESCALE) : 1; // test hook: speeds up every timer
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -338,21 +376,26 @@ const STEPS = [];
 { let mv = MOVES[0].id; for (const s of X.steps) { if (s.movement) mv = s.movement; STEPS.push(Object.assign({}, s, { movement: mv })); } }
 const moveIndex = id => Math.max(0, MOVES.findIndex(m => m.id === id));
 
-const S = { runId: null, startedAt: null, index: 0, history: [], answers: {}, measure: {}, completed: false, sound: !(X.sound && X.sound.default === "off"), voice: false };
-let resumeAt = 0;
+const S = { runId: null, startedAt: null, index: 0, history: [], answers: {}, measure: {}, completed: false, sound: !(X.sound && X.sound.default === "off"), voice: false, voiceName: null, feedback: {} };
+let resumeAt = 0, lastDone = false; // lastDone: a finished run in this browser that can still be looked back on
 try {
   const v = JSON.parse(localStorage.getItem(KEY) || "null");
   if (v) {
     if (v.runId && !v.completed && v.index > 0 && v.index < STEPS.length) {
-      Object.assign(S, { runId: v.runId, startedAt: v.startedAt, history: v.history || [], answers: v.answers || {}, measure: v.measure || {} });
+      Object.assign(S, { runId: v.runId, startedAt: v.startedAt, history: v.history || [], answers: v.answers || {}, measure: v.measure || {}, feedback: v.feedback || {} });
       resumeAt = v.index;
+    }
+    else if (v.runId && v.completed && Array.isArray(v.history)) {
+      Object.assign(S, { runId: v.runId, startedAt: v.startedAt, history: v.index ? v.history.concat(v.index) : v.history, answers: v.answers || {}, measure: v.measure || {}, feedback: v.feedback || {}, completed: true });
+      lastDone = true;
     }
     if (typeof v.sound === "boolean") S.sound = v.sound;
     if (typeof v.voice === "boolean") S.voice = v.voice;
+    if (typeof v.voiceName === "string") S.voiceName = v.voiceName;
   }
 } catch (e) {}
 function saveLocal() {
-  try { localStorage.setItem(KEY, JSON.stringify({ runId: S.runId, startedAt: S.startedAt, index: S.index, history: S.history, answers: S.answers, measure: S.measure, completed: S.completed, sound: S.sound, voice: S.voice })); } catch (e) {}
+  try { localStorage.setItem(KEY, JSON.stringify({ runId: S.runId, startedAt: S.startedAt, index: S.index, history: S.history, answers: S.answers, measure: S.measure, completed: S.completed, feedback: S.feedback, sound: S.sound, voice: S.voice, voiceName: S.voiceName })); } catch (e) {}
 }
 function setAnswer(step, value, extra) {
   S.answers[step.id] = Object.assign({ type: step.type, prompt: plain(step.prompt || step.title || ""), value }, step.private ? { private: true } : {}, extra || {});
@@ -392,7 +435,7 @@ const sync = {
 function payload() {
   const answers = {};
   for (const [id, a] of Object.entries(S.answers)) if (!a.private) answers[id] = a;
-  return { experience: X.id, title: X.title, startedAt: S.startedAt, updatedAt: new Date().toISOString(), completed: S.completed, measure: S.measure, path: S.history.concat(S.index).map(i => STEPS[i].id), answers };
+  return { experience: X.id, title: X.title, startedAt: S.startedAt, updatedAt: new Date().toISOString(), completed: S.completed, measure: S.measure, path: (lastDone ? S.history : S.history.concat(S.index)).map(i => STEPS[i].id), answers, feedback: S.feedback };
 }
 if (window.claude && typeof window.claude.use === "function") {
   window.claude.use("db").then(d => { caps.db = d; if (d) sync.flush(); }, () => {});
@@ -451,22 +494,37 @@ const audio = (() => {
   };
 })();
 
-/* ---------- voice guidance via the browser's speech synthesis ---------- */
+/* ---------- voice guidance via the browser's speech synthesis ----------
+   Prefers natural (neural) voices: Microsoft Edge offers Andrew, Ryan, Ava, Emma and others to pages;
+   Apple devices offer Enhanced and Premium voices once downloaded. The person can pick any voice. */
 const speech = (() => {
   const ok = "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
+  const lang = (X.lang || "en").slice(0, 2).toLowerCase();
+  const PREFER = [].concat(X.voices || [], ["Andrew", "Ryan", "Brian", "Ava", "Emma", "Sonia", "Guy", "Aria", "Jenny"]);
+  const natural = v => /natural|neural|online/i.test(v.name), rich = v => /enhanced|premium|siri/i.test(v.name);
+  const rank = v => {
+    const i = PREFER.findIndex(p => v.name.includes(p));
+    return (natural(v) ? 300 : rich(v) ? 200 : /google/i.test(v.name) ? 100 : 0) + (i >= 0 ? 60 - i : 0) + (v.localService ? 1 : 0);
+  };
   let chosen = null;
-  function pick() {
-    const vs = speechSynthesis.getVoices(); if (!vs.length) return null;
-    const lang = (X.lang || "en").slice(0, 2).toLowerCase(), pool = vs.filter(v => (v.lang || "").toLowerCase().startsWith(lang));
-    for (const p of ["Samantha", "Serena", "Moira", "Karen", "Daniel", "Google UK English Female", "Microsoft Aria", "Microsoft Jenny", "Microsoft Sonia", "Google US English"]) { const v = pool.find(x => x.name.includes(p)); if (v) return v; }
-    return pool.find(v => v.localService) || pool[0] || null;
-  }
-  if (ok) speechSynthesis.addEventListener && speechSynthesis.addEventListener("voiceschanged", () => { chosen = pick(); });
+  const list = () => { try { return speechSynthesis.getVoices().filter(v => (v.lang || "").toLowerCase().startsWith(lang)).sort((a, b) => rank(b) - rank(a)); } catch (e) { return []; } };
+  const current = () => { if (!chosen) { const vs = list(); chosen = (S.voiceName && vs.find(v => v.name === S.voiceName)) || vs[0] || null; } return chosen; };
+  if (ok && speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", () => { chosen = null; });
   return {
-    ok,
-    say(text, force) {
-      if (!ok || !text || !(S.voice || force)) return;
-      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); chosen = chosen || pick(); if (chosen) u.voice = chosen; u.rate = .84; u.pitch = .94; speechSynthesis.speak(u); } catch (e) {}
+    ok, list, current,
+    label: v => v.name.replace(/^Microsoft\s+/, "").replace(/\s+Online/, "").replace(/\s*-\s*English\s*\((.+)\)\s*$/, " · $1"),
+    choose(name) { S.voiceName = name; chosen = null; },
+    onVoices(fn) { if (ok && speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", fn); },
+    say(text, o) {
+      o = o || {};
+      if (!ok || !text || !(S.voice || o.force)) return;
+      try {
+        if (!o.queue) speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text), v = current();
+        if (v) { u.voice = v; u.lang = v.lang; }
+        u.rate = v && natural(v) ? .93 : .86;
+        speechSynthesis.speak(u);
+      } catch (e) {}
     },
     stop() { if (ok) try { speechSynthesis.cancel(); } catch (e) {} }
   };
@@ -647,7 +705,7 @@ const BREATH = {
   awaken:    [{ kind: "in", seconds: 2, label: "in" }, { kind: "out", seconds: 1.5, label: "out" }],
   hum:       [{ kind: "in", seconds: 4, label: "in" }, { kind: "out", seconds: 8, label: "hmmm…", say: "hum" }]
 };
-const breathPhases = p => Array.isArray(p) ? p.map(x => ({ kind: x.kind || "in", seconds: Number(x.seconds) || 4, label: x.label || x.kind || "", to: x.to, say: x.say })) : (BREATH[p] || BREATH.extended);
+const breathPhases = p => Array.isArray(p) ? p.map(x => ({ kind: x.kind || "in", seconds: Number(x.seconds) || 4, label: x.label || x.kind || "", to: x.to, say: x.say, figure: x.figure })) : (BREATH[p] || BREATH.extended);
 const REGIONS = [["head", "head & face"], ["throat", "throat"], ["chest", "chest"], ["belly", "belly"], ["pelvis", "hips & pelvis"], ["arms", "shoulders & arms"], ["hands", "hands"], ["legs", "legs"], ["feet", "feet"], ["back", "back"], ["everywhere", "everywhere"], ["unclear", "hard to say"]];
 
 const RENDER = {
@@ -655,6 +713,7 @@ const RENDER = {
     const resuming = resumeAt > 0;
     screen.append(el("p", { class: "eyebrow", html: fill(step.eyebrow || X.subtitle || "a passage for today") }), el("h1", { html: fill(step.title || X.title) }));
     if (step.lines) screen.append(linesEl(step.lines));
+    screen.append(el("p", { class: "freedom", html: fill(X.freedom || "Everything here was made for you, and you can change any of it. Adjust a stretch until it feels right, sing a song instead of playing one, skip what doesn't fit, or invent your own version.") }));
     const meta = el("ul", { class: "meta" });
     if (X.duration) meta.append(el("li", { text: "about " + X.duration + " minutes" }));
     for (const p of [].concat(X.prep || [])) meta.append(el("li", { html: fill(p) }));
@@ -664,6 +723,7 @@ const RENDER = {
       speech.ok ? el("button", { class: "chip", type: "button", "data-pref": "voice" }) : null);
     prefs.addEventListener("click", e => { const b = e.target.closest("[data-pref]"); if (b) (b.dataset.pref === "sound" ? toggleSound : toggleVoice)(); });
     screen.append(prefs);
+    if (speech.ok) screen.append(voicePicker());
     const nCompanion = STEPS.filter(s => s.type === "companion").length;
     const notes = [];
     if (nCompanion) notes.push((nCompanion === 1 ? "At one moment" : "At " + nCompanion + " moments") + ", Claude responds to what you've written. The first time, you may be asked to allow it.");
@@ -672,11 +732,19 @@ const RENDER = {
     renderPrefs();
     if (resuming) {
       const fresh = el("button", { class: "btn quiet", type: "button" }, "Start fresh");
-      fresh.addEventListener("click", () => { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, completed: false }); resumeAt = 0; begin(); next(); });
+      fresh.addEventListener("click", () => { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, feedback: {}, completed: false }); resumeAt = 0; begin(); next(); });
       screen.append(el("div", { class: "row" }, fresh));
       setNext("Continue where you left off", { action: () => { begin(); S.index = resumeAt; resumeAt = 0; saveLocal(); show(1); } });
     } else {
-      setNext(step.cta || "Begin", { action: () => { begin(); next(); } });
+      if (lastDone) {
+        const look = el("button", { class: "btn quiet", type: "button", id: "look-back" }, "Look back at your last time");
+        look.addEventListener("click", openLookback);
+        screen.append(el("div", { class: "row" }, look));
+      }
+      setNext(step.cta || "Begin", { action: () => {
+        if (lastDone) { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, feedback: {}, completed: false }); lastDone = false; }
+        begin(); next();
+      } });
     }
   },
 
@@ -699,7 +767,7 @@ const RENDER = {
       await sc.wait(.4);
       for (let i = 0; i < ps.length && !done; i++) {
         ps[i].classList.add("on");
-        if (step.voice) speech.say(ps[i].textContent);
+        if (step.voice || (S.voice && step.voice !== false)) speech.say(ps[i].textContent, { queue: i > 0 });
         if (i < ps.length - 1) { const w = ps[i].textContent.split(/\s+/).filter(Boolean).length; await sc.wait(step.pace != null ? step.pace : Math.min(5.5, 1.2 + w * .26)); }
       }
       await sc.wait(.6); finish();
@@ -712,10 +780,11 @@ const RENDER = {
     const orb = el("div", { class: "orb" }), label = el("p", { class: "orb-label", html: fill(step.ready || "when you're ready") });
     const dots = el("div", { class: "dots", "aria-hidden": "true" }, Array.from({ length: cycles }, () => el("i")));
     const start = el("button", { class: "btn", type: "button" }, step.start || "Start");
-    screen.append(el("div", { class: "breath" }, el("div", { class: "orb-wrap" }, orb), label, dots, start));
+    const fig = figureFor(step, phases.map(p => p.figure), sc);
+    screen.append(el("div", { class: "breath" }, fig ? fig.wrap : el("div", { class: "orb-wrap" }, orb), label, dots, start));
     setNext("Skip", { quiet: true });
     start.addEventListener("click", () => {
-      start.remove();
+      start.remove(); if (fig) fig.begin();
       const segs = [];
       for (let c = 0; c < cycles; c++) phases.forEach((p, k) => segs.push(Object.assign({}, p, { cycle: c, first: k === 0 })));
       timeline(sc, segs, {
@@ -724,12 +793,14 @@ const RENDER = {
           label.textContent = p.label;
           const scale = p.to != null ? p.to : p.kind === "in" ? 1 : p.kind === "out" ? .55 : null;
           if (scale != null) { orb.style.transitionDuration = (p.seconds * TS) + "s"; orb.style.transform = "scale(" + scale + ")"; }
+          if (fig && p.figure) fig.go(p.figure, p.seconds * .9);
           audio.breath(p.kind, p.seconds);
           if (p.cycle < 2) speech.say(p.say || p.label);
         },
         onDone() {
           dots.children[cycles - 1].className = "done";
           orb.style.transitionDuration = (2 * TS) + "s"; orb.style.transform = "scale(.7)";
+          if (fig) fig.go(step.figureEnd || "stand", 2);
           label.innerHTML = fill(step.after || "rest here");
           audio.breath("rest", 2); audio.bell(.5);
           setNext(step.cta || "Continue");
@@ -740,6 +811,9 @@ const RENDER = {
 
   guided(step, screen, sc) {
     heading(step, screen);
+    const segs = (step.cues || []).map(c => typeof c === "string" ? { text: c, seconds: 12 } : Object.assign({}, c, { seconds: Number(c.seconds) || 12 }));
+    const fig = figureFor(step, segs.map(c => c.figure), sc);
+    if (fig) screen.append(fig.wrap);
     const cue = el("p", { class: "cue", html: fill(step.ready || "Find a comfortable position. Begin when you're ready.") });
     const bar = el("i"), start = el("button", { class: "btn", type: "button" }, step.start || "Begin"), pause = el("button", { class: "btn quiet", type: "button", hidden: true }, "Pause");
     screen.append(cue, el("div", { class: "progress", "aria-hidden": "true" }, bar), el("div", { class: "row" }, start, pause));
@@ -747,12 +821,14 @@ const RENDER = {
     let held = false;
     pause.addEventListener("click", () => { held = !held; pause.textContent = held ? "Resume" : "Pause"; if (held) speech.stop(); });
     start.addEventListener("click", () => {
-      start.remove(); pause.hidden = false;
+      start.remove(); pause.hidden = false; if (fig) fig.begin();
       if (step.bell !== false) audio.bell(.6);
-      const segs = (step.cues || []).map(c => typeof c === "string" ? { text: c, seconds: 12 } : { text: c.text, seconds: Number(c.seconds) || 12 });
       timeline(sc, segs, {
         paused: () => held,
-        onSegment(c) { swap(cue, fill(c.text), sc); speech.say(plain(c.text)); },
+        onSegment(c) {
+          swap(cue, fill(c.text), sc); speech.say(plain(c.text));
+          if (fig && c.figure) { if (Array.isArray(c.figure)) fig.loop(c.figure, c.beat || 2.2); else fig.go(c.figure, c.beat || 1.6); }
+        },
         onTick(f) { bar.style.width = (f * 100).toFixed(1) + "%"; },
         onDone() {
           pause.remove(); bar.style.width = "100%";
@@ -770,7 +846,8 @@ const RENDER = {
     const anchor = el("p", { class: "cue", html: fill(step.anchor || "Just this breath.") });
     const ring = el("div", { class: "ring" }), time = el("p", { class: "time", text: fmt(secs) });
     const start = el("button", { class: "btn", type: "button" }, step.start || "Begin");
-    screen.append(anchor, el("div", { class: "sit-visual", "aria-hidden": "true" }, ring), el("div", { class: "row centered" }, start, time));
+    const still = step.figure && POSES ? makeFigure(POSES, { timescale: TS, start: [].concat(step.figure)[0] }) : null;
+    screen.append(anchor, still ? el("div", { class: "figure-wrap" }, still.el) : el("div", { class: "sit-visual", "aria-hidden": "true" }, ring), el("div", { class: "row centered" }, start, time));
     setNext("Skip", { quiet: true });
     start.addEventListener("click", () => {
       start.remove(); ring.classList.add("on"); audio.bell(.7); speech.say(plain(step.anchor || ""));
@@ -957,11 +1034,11 @@ const RENDER = {
   companion(step, screen, sc) {
     heading(step, screen);
     const maxTurns = Math.max(1, step.turns || 1), convo = [];
-    let ctl = null, turns = 0;
+    let ctl = null, turns = 0, tier = null;
     sc.onEnd(() => { if (ctl) ctl.abort(); });
     setNext(step.cta || "Continue", { quiet: true });
     const note = () => { const by = el("span", { class: "by" }), body = el("div", { class: "body" }); screen.append(el("div", { class: "note" }, by, body)); return { by, body }; };
-    const record = live => setAnswer(step, convo.filter(t => t.role === "assistant").map(t => t.content).join("\n\n"), { live, exchange: convo.slice(), prompt: plain(step.title || "") || "Claude's response" });
+    const record = live => setAnswer(step, convo.filter(t => t.role === "assistant").map(t => t.content).join("\n\n"), { live, tier: tier || undefined, exchange: convo.slice(), prompt: plain(step.title || "") || "Claude's response" });
     function useFallback(n) {
       n.by.textContent = step.fallbackBy || "a note written for you";
       n.body.innerHTML = fill(step.fallback || "Read back what you've written so far, slowly, as if a friend had written it. What do you notice?");
@@ -980,6 +1057,7 @@ const RENDER = {
       try {
         const res = await caps.sample(input, opts);
         if (!sc.alive) return;
+        tier = res.modelTierApplied || null;
         n.by.textContent = "claude, responding to you"; n.body.textContent = res.text;
         convo.push({ role: "assistant", content: res.text }); record(true);
         speech.say(res.text);
@@ -1024,10 +1102,12 @@ const RENDER = {
     if (X.lineage && X.lineage.length) keep.append(section("woven from", el("ul", { class: "lineage" }, X.lineage.map(l => el("li", { html: "<b>" + esc(l.name) + "</b>" + (l.source ? " · " + esc(l.source) : "") })))));
     screen.append(keep);
     const status = el("p", { class: "status", id: "save-status" });
+    const look = el("button", { class: "btn", type: "button", id: "look-back" }, "Look back at the steps");
     const copy = el("button", { class: "btn", type: "button" }, "Copy");
     const file = el("button", { class: "btn", type: "button", id: "save-file", hidden: !caps.downloads }, "Save as a file");
     const again = el("button", { class: "btn quiet", type: "button" }, "Begin again");
-    screen.append(el("div", { class: "actions" }, copy, file, again), status);
+    screen.append(el("p", { class: "note-small", text: "When you're ready: look back at the steps and mark the ones that helped, or didn't. It's how the next one gets better." }), el("div", { class: "actions" }, look, copy, file, again), status);
+    look.addEventListener("click", openLookback);
     copy.addEventListener("click", () => {
       const text = summary();
       const fallback = () => { const box = el("textarea", { class: "copybox", id: "copy-" + step.id, readonly: true, "aria-label": "Your summary" }); box.value = text; copy.parentNode.after(box); box.select(); status.textContent = "Select all and copy."; };
@@ -1038,7 +1118,7 @@ const RENDER = {
       try { await caps.downloads.save({ filename: X.id + ".md", data: summary() }); status.textContent = "Saved."; }
       catch (e) { status.textContent = e && e.code === "declined" ? "Not saved." : "Saving isn't available here. Copy works instead."; }
     });
-    again.addEventListener("click", () => { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, completed: false, index: 0 }); resumeAt = 0; saveLocal(); lastMove = null; show(-1); });
+    again.addEventListener("click", () => { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, feedback: {}, completed: false, index: 0 }); resumeAt = 0; lastDone = false; saveLocal(); lastMove = null; show(-1); });
     setNext("", { show: false });
     updateStatus();
   }
@@ -1077,6 +1157,14 @@ function summary() {
     const v = answerText(st.id); if (v) rows.push("", "**" + (a.prompt || st.id) + "**", v);
   }
   if (rows.length) out.push("", "## Along the way", ...rows);
+  const notes = [];
+  for (const st of STEPS) {
+    const f = S.feedback[st.id]; if (!f || !(f.reaction || f.note)) continue;
+    const r = REACT.find(x => x[0] === f.reaction);
+    notes.push("- " + stepName(st) + (r ? ": " + r[1].toLowerCase() : "") + (f.note ? (r ? ". " : ": ") + f.note : ""));
+  }
+  if (S.feedback._overall && S.feedback._overall.note) notes.push("- Overall: " + S.feedback._overall.note);
+  if (notes.length) out.push("", "## Your notes on the steps", ...notes);
   if (X.lineage && X.lineage.length) out.push("", "## Woven from", ...X.lineage.map(l => "- " + l.name + (l.source ? " (" + l.source + ")" : "")));
   return out.join("\n") + "\n";
 }
@@ -1086,6 +1174,107 @@ function updateStatus() {
   s.textContent = saved === "saved" ? "Your reflections are saved privately, so Claude can read them when you go back to your conversation."
     : caps.db && !sync.dead ? "Saving your reflections privately for Claude…"
     : "Your reflections are kept in this browser. Copy them if you'd like to share them with Claude.";
+}
+
+/* ---------- the figure that demonstrates movements ---------- */
+// Shows the step's poses on a slow loop as a preview until the person starts; then follows the cues.
+function figureFor(step, perCue, sc) {
+  if (!POSES || typeof makeFigure !== "function") return null;
+  const poses = [].concat(step.figure || [], ...perCue.filter(Boolean)).reduce((a, p) => a.concat(p), []);
+  if (!poses.length) return null;
+  const f = makeFigure(POSES, { timescale: TS, start: poses[0] });
+  sc.onEnd(() => f.stop());
+  const seq = poses.filter((p, i) => p !== poses[i - 1]);
+  const note = el("p", { class: "figure-note", text: seq.length > 1 ? "a preview of the movements" : "" });
+  if (seq.length > 1 && step.preview !== false) f.loop(seq, 1.3);
+  return {
+    wrap: el("div", { class: "figure-wrap" }, f.el, note),
+    begin() { note.textContent = ""; f.go(poses[0], 1); },
+    go: (p, sec) => f.go(p, sec), loop: (l, sec) => f.loop(l, sec)
+  };
+}
+
+function voicePicker() {
+  const sel = el("select", { id: "voice-pick", "aria-label": "Voice for guidance" });
+  const hear = el("button", { class: "chip", type: "button" }, "Hear it");
+  const wrap = el("div", { class: "voice-pick", hidden: true }, sel, hear);
+  const sample = "Let your shoulders soften. There's nothing you need to get right.";
+  const fillSel = () => {
+    if (!wrap.isConnected && wrap.dataset.done) return;
+    const vs = speech.list(), cur = speech.current(); wrap.hidden = !vs.length;
+    sel.replaceChildren(...vs.slice(0, 40).map(v => el("option", { value: v.name, selected: !!cur && v.name === cur.name }, speech.label(v))));
+    wrap.dataset.done = "1";
+  };
+  fillSel(); speech.onVoices(fillSel);
+  sel.addEventListener("change", () => { speech.choose(sel.value); if (!S.voice) { S.voice = true; renderPrefs(); } saveLocal(); speech.say(sample, { force: true }); });
+  hear.addEventListener("click", () => speech.say(sample, { force: true }));
+  return wrap;
+}
+
+/* ---------- look back: per-step feedback, after the card ---------- */
+const REACT = [["helped", "This helped"], ["okay", "It was okay"], ["not", "Didn't help"]];
+function stepName(st) {
+  if (st.name) return plain(st.name);
+  if (st.type === "scale" && st.measure) return st.measure === "before" ? "Check-in at the start" : "Check-in at the end";
+  const t = plain(st.title || st.prompt || (st.lines || []).find(Boolean) || st.anchor || st.type);
+  return t.length > 56 ? t.slice(0, 54).replace(/\s+\S*$/, "") + "…" : t;
+}
+function recap(st) {
+  const box = el("div", { class: "recap" }), a = S.answers[st.id];
+  const head = st.title || st.prompt;
+  if (head) box.append(el("p", { class: "recap-title", html: fill(head) }));
+  const lines = st.type === "guided" ? (st.cues || []).map(c => typeof c === "string" ? c : c.text)
+    : st.type === "sit" ? [st.anchor] : st.type === "companion" ? [] : st.lines || [];
+  const shown = lines.filter(Boolean);
+  if (shown.length) box.append(el("ul", {}, shown.map(l => el("li", { html: fill(l) }))));
+  if (a && !a.private && st.type !== "release") {
+    const v = answerText(st.id);
+    if (v) box.append(el("p", { class: "recap-answer" }, el("span", { class: "label", text: st.type === "companion" ? "claude said" : "you" }), el("span", { text: v })));
+  }
+  return box;
+}
+function lookRow(st) {
+  const fb = () => S.feedback[st.id] || {};
+  const save = f => { if (!f.reaction && !f.note) delete S.feedback[st.id]; else S.feedback[st.id] = Object.assign(f, { name: stepName(st) }); saveLocal(); sync.soon(); paint(); };
+  const badge = el("span", { class: "lb-badge" });
+  const head = el("button", { class: "lb-head", type: "button", "aria-expanded": "false" },
+    el("span", { class: "lb-move", text: String(MOVES[moveIndex(st.movement)].name || "").toLowerCase() }), el("span", { text: stepName(st) }), badge);
+  const reacts = el("div", { class: "prefs" }, REACT.map(([k, label]) => el("button", { class: "chip", type: "button", "data-k": k }, label)));
+  const note = el("textarea", { id: "lb-" + st.id, rows: 2, placeholder: "What about it? (optional)", "aria-label": "Note on " + stepName(st) });
+  const body = el("div", { class: "lb-body", hidden: true }, recap(st), reacts, note);
+  function paint() {
+    const f = fb(), r = REACT.find(x => x[0] === f.reaction);
+    reacts.querySelectorAll("[data-k]").forEach(b => b.setAttribute("aria-pressed", String(f.reaction === b.dataset.k)));
+    badge.textContent = r ? r[1].toLowerCase() : f.note ? "note" : "";
+  }
+  note.value = fb().note || "";
+  reacts.addEventListener("click", e => {
+    const b = e.target.closest("[data-k]"); if (!b) return;
+    const f = Object.assign({}, fb()); if (f.reaction === b.dataset.k) delete f.reaction; else f.reaction = b.dataset.k; save(f);
+  });
+  note.addEventListener("input", () => { const f = Object.assign({}, fb()); if (note.value.trim()) f.note = note.value; else delete f.note; save(f); });
+  head.addEventListener("click", () => { const open = body.hidden; body.hidden = !open; head.setAttribute("aria-expanded", String(open)); });
+  paint();
+  return el("div", { class: "lb-row" }, head, body);
+}
+function openLookback() {
+  if (document.querySelector(".overlay.lookback")) return;
+  const steps = [];
+  for (const i of S.history.concat(S.index)) { const st = STEPS[i]; if (st.type !== "threshold" && st.type !== "card" && !(st.type === "scale" && st.measure) && !steps.includes(st)) steps.push(st); }
+  const overall = el("textarea", { id: "lb-overall", rows: 3, placeholder: "Anything else about today's experience?", "aria-label": "Anything else" });
+  overall.value = (S.feedback._overall && S.feedback._overall.note) || "";
+  overall.addEventListener("input", () => { if (overall.value.trim()) S.feedback._overall = { note: overall.value }; else delete S.feedback._overall; saveLocal(); sync.soon(); });
+  const done = el("button", { class: "btn", type: "button" }, "Done");
+  const panel = el("div", { class: "panel" },
+    el("p", { class: "eyebrow", text: "look back" }), el("h2", { text: "What helped, and what didn't?" }),
+    el("p", { class: "note-small", text: "Tap a step to see it again. Mark only the ones that stood out, either way." }),
+    el("div", { class: "lb-list" }, steps.map(lookRow)), overall, el("div", { class: "actions" }, done));
+  const ov = el("div", { class: "overlay lookback", role: "dialog", "aria-modal": "true", "aria-label": "Look back at the steps" }, panel);
+  document.body.append(ov);
+  const close = () => { ov.remove(); const b = $("#look-back"); if (b) b.focus(); };
+  done.addEventListener("click", close);
+  ov.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+  const first = ov.querySelector(".lb-head"); if (first) first.focus();
 }
 
 /* ---------- controls ---------- */
@@ -1098,7 +1287,7 @@ function renderPrefs() {
   });
 }
 function toggleSound() { S.sound = !S.sound; if (S.sound) { if (S.runId) audio.start(); } else audio.stop(); renderPrefs(); saveLocal(); }
-function toggleVoice() { S.voice = !S.voice; if (S.voice) speech.say("I'll speak the guidance.", true); else speech.stop(); renderPrefs(); saveLocal(); }
+function toggleVoice() { S.voice = !S.voice; if (S.voice) speech.say("I'll speak the guidance.", { force: true }); else speech.stop(); renderPrefs(); saveLocal(); }
 soundBtn.addEventListener("click", toggleSound);
 voiceBtn.addEventListener("click", toggleVoice);
 function openSteady() { PAUSED = true; speech.stop(); audio.duck(true); overlay.hidden = false; $("#steady-back").focus(); }
@@ -1108,7 +1297,7 @@ $("#steady-back").addEventListener("click", closeSteady);
 $("#steady-end").addEventListener("click", () => { closeSteady(); const c = STEPS.findIndex(s => s.type === "card"); if (c >= 0) { if (!S.runId) begin(); jump(c); } });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !overlay.hidden) { closeSteady(); return; }
-  if (!overlay.hidden) return;
+  if (!overlay.hidden || document.querySelector(".overlay.lookback")) return;
   const t = e.target, tag = t && t.tagName;
   if (tag === "TEXTAREA" || tag === "INPUT" || tag === "BUTTON" || tag === "A") return;
   if (e.key === "Enter" || e.key === "ArrowRight") { if (!nextBtn.classList.contains("hide")) nextBtn.click(); }
