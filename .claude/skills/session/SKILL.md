@@ -70,7 +70,8 @@ node tools/preview.mjs private/sessions/<id> --choose <stepId>=<n>   # walk anot
 node tools/narration.mjs lines private/sessions/<id> --voice "<name>"   # prints lines still to record
 ```
 Synthesize them with Higgsfield `generate_audio_batch` (model `seed_audio`, `voice_type: "preset"`,
-the profile's `voice_id`, `format: "mp3"`, `speech_rate: -12`), up to 12 per batch, then `jobs_wait`.
+the profile's `voice_id`, `format: "mp3"`, `speech_rate: -12`) in groups of 8 (more are refused with a
+429 rate limit, which costs nothing), waiting for each group with `jobs_wait` before the next.
 Save `[{key, url}]` to `<dir>/narration-results.json` and run
 `node tools/narration.mjs fetch <dir> <dir>/narration-results.json`, then build again. It costs about
 0.5 credits per line. If the clips can't be fetched (the environment must allow

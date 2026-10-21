@@ -11,6 +11,7 @@
 // tools/build.mjs then embeds the keys that have a clip, and lists the files to publish with the page.
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 
 const [cmd, dir, arg] = process.argv.slice(2);
 if (!cmd || !dir) { console.error("usage: node tools/narration.mjs lines|fetch <dir> [results.json]"); process.exit(2); }
@@ -50,12 +51,9 @@ if (cmd === "lines") {
   fs.mkdirSync(audioDir, { recursive: true });
   let ok = 0;
   for (const { key, url } of results) {
-    try {
-      const r = await fetch(url);
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      fs.writeFileSync(path.join(audioDir, key + ".mp3"), Buffer.from(await r.arrayBuffer()));
-      ok++;
-    } catch (e) { console.error(`  ✗ ${key}: ${e.message}${e.cause ? " (" + e.cause.message + ")" : ""}`); }
+    // curl rather than fetch: it honors the environment's HTTPS proxy
+    try { execFileSync("curl", ["-sSfL", "--max-time", "60", "-o", path.join(audioDir, key + ".mp3"), url], { stdio: ["ignore", "ignore", "pipe"] }); ok++; }
+    catch (e) { console.error(`  ✗ ${key}: ${String(e.stderr || e.message).trim()}`); }
   }
   console.log(`fetched ${ok}/${results.length} clips into ${audioDir}`);
   if (ok < results.length) process.exit(1);
