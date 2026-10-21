@@ -95,6 +95,7 @@ h2 { font-size: var(--s-1); line-height: 1.3; }
 .lines.poem { font-style: italic; gap: .3em; }
 .lines.poem p.gap { height: .7em; }
 .lines.poem .echo { font-style: normal; }
+.lines.large { font-size: var(--s-2); line-height: 1.22; }
 .lines.small { font-family: var(--font-body); font-size: var(--s-0); line-height: 1.55; color: var(--ink-soft); gap: .6em; }
 .attrib { margin: 0; font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .06em; color: var(--ink-soft); transition: opacity 1.2s; }
 .echo { font-style: italic; color: var(--accent); }
@@ -401,15 +402,16 @@ if (window.claude && typeof window.claude.use === "function") {
 
 /* ---------- sound: a soft drone, moving air, and a bowl-like bell, all synthesized ---------- */
 const audio = (() => {
-  let ctx = null, master = null, filter = null, air = null, on = false;
+  let ctx = null, master = null, bed = null, filter = null, air = null, on = false, hushed = false;
   const root = Number(X.sound && X.sound.root) || 98, bellF = Number(X.sound && X.sound.bell) || 392;
   function init() {
     if (ctx) return true;
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
     try { ctx = new AC(); } catch (e) { return false; }
     master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    bed = ctx.createGain(); bed.gain.value = hushed ? 0 : 1; bed.connect(master); // drone + air; bells bypass it
     filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 700; filter.Q.value = .6;
-    const drone = ctx.createGain(); drone.gain.value = .5; filter.connect(drone); drone.connect(master);
+    const drone = ctx.createGain(); drone.gain.value = .5; filter.connect(drone); drone.connect(bed);
     for (const [mult, type, g] of [[.5, "sine", .09], [1, "sine", .16], [1.5, "sine", .07], [2, "triangle", .03], [3, "sine", .018]]) {
       for (const det of [-3, 3]) {
         const o = ctx.createOscillator(), gn = ctx.createGain();
@@ -422,7 +424,7 @@ const audio = (() => {
     let last = 0; for (let i = 0; i < len; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2; }
     const fadeN = 2048; for (let i = 0; i < fadeN; i++) { const k = i / fadeN; d[i] *= k; d[len - 1 - i] *= k; }
     const src = ctx.createBufferSource(), nf = ctx.createBiquadFilter(); src.buffer = buf; src.loop = true; nf.type = "lowpass"; nf.frequency.value = 420;
-    air = ctx.createGain(); air.gain.value = .05; src.connect(nf); nf.connect(air); air.connect(master); src.start();
+    air = ctx.createGain(); air.gain.value = .05; src.connect(nf); nf.connect(air); air.connect(bed); src.start();
     const wave = ctx.createOscillator(), waveG = ctx.createGain(); wave.frequency.value = .07; waveG.gain.value = .022; wave.connect(waveG); waveG.connect(air.gain); wave.start();
     return true;
   }
@@ -431,6 +433,7 @@ const audio = (() => {
     start() { if (!init()) return; if (ctx.resume) ctx.resume(); ramp(master.gain, .55, 4); on = true; },
     stop() { if (!ctx) return; ramp(master.gain, 0, 1.5); on = false; },
     duck(d) { if (ctx && on) ramp(master.gain, d ? .18 : .55, 1); },
+    hush(q) { if (q === hushed) return; hushed = q; if (ctx) ramp(bed.gain, q ? 0 : 1, q ? 2 : 4); },
     mood(sky) { if (ctx) ramp(filter.frequency, 380 + luminance(sky.mid) * 900, 6); },
     breath(kind, sec) { if (!ctx || !on) return; const target = kind === "in" ? .11 : kind === "out" ? .028 : .05; ramp(air.gain, target, Math.max(.3, sec * TS)); },
     bell(strength) {
@@ -610,7 +613,7 @@ function next() { const ni = nextIndex(S.index); if (ni < 0) return; S.history.p
 function jump(i) { if (i === S.index) return; S.history.push(S.index); S.index = i; saveLocal(); sync.soon(.4); show(1); }
 function back() { if (busy || !S.history.length) return; S.index = S.history.pop(); saveLocal(); show(-1); }
 async function show(dir) {
-  busy = true; scope.end(); speech.stop(); PAUSED = false; audio.breath("rest", 1);
+  busy = true; scope.end(); speech.stop(); PAUSED = false; audio.breath("rest", 1); audio.hush(!!STEPS[S.index].quiet);
   const sc = scope = mkScope(), step = STEPS[S.index];
   setMovement(step);
   const old = stage.querySelector(".screen");

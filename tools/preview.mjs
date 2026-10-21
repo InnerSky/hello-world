@@ -4,6 +4,7 @@
 //
 //   node tools/preview.mjs private/sessions/<id>            # phone-sized walk-through
 //   node tools/preview.mjs private/sessions/<id> --desktop  # also capture desktop size
+//   node tools/preview.mjs private/sessions/<id> --choose probe=1   # take option 2 at step "probe" (repeatable)
 //
 // Screenshots go to <dir>/preview/ (git-ignored). Console errors are reported and fail the run.
 import fs from "node:fs";
@@ -13,6 +14,8 @@ import { pathToFileURL } from "node:url";
 
 const dir = process.argv[2];
 const desktop = process.argv.includes("--desktop");
+const picks = {}; // step id → option index, for testing branches
+process.argv.forEach((a, i) => { if (a === "--choose") { const [id, n] = String(process.argv[i + 1] || "").split("="); picks[id] = Number(n) || 0; } });
 if (!dir) { console.error("usage: node tools/preview.mjs <session-dir> [--desktop]"); process.exit(2); }
 
 let chromium;
@@ -55,7 +58,7 @@ async function walk(label, viewport) {
     const screen = page.locator(".screen").last();
     // act like a person would on each kind of step
     if (type === "write") await screen.locator("textarea").first().fill("A few honest words, written in the preview.");
-    if (type === "choose") await screen.locator(".opt").first().click();
+    if (type === "choose") await screen.locator(".opt").nth(picks[step] || 0).click();
     if (type === "words") { const chips = screen.locator(".chip"); await chips.nth(0).click(); await chips.nth(1).click(); }
     if (type === "scale") await screen.locator("input[type=range]").evaluate(r => { r.value = 6; r.dispatchEvent(new Event("input", { bubbles: true })); });
     if (type === "body") await screen.locator(".chip").nth(2).click();

@@ -48,13 +48,14 @@ Artifact. See `examples/sample/experience.json` for a complete working example.
 | `when` | show only if a condition holds (see Branching) |
 | `title` / `prompt` / `sub` / `lines` | heading, question, small line under it, short lines above the control |
 | `cta` | label of the Continue button |
+| `quiet` | `true` fades out the ambient drone for this step (bells still ring), e.g. while they play their own music |
 
 ## Step types
 
 | type | what it does | key fields |
 |---|---|---|
 | `threshold` | opening screen: title, lines, length, sound/voice toggles, Begin | `lines`, `eyebrow`, `cta` |
-| `text` | lines that appear one by one; tap to show all | `lines`, `style` (`poem` / `small`), `pace` (sec between lines), `hold` (sec before Continue), `attribution`, `voice: true` |
+| `text` | lines that appear one by one; tap to show all | `lines`, `style` (`poem` / `large` / `small`, combinable: `"poem large"`), `pace` (sec between lines), `hold` (sec before Continue), `attribution`, `voice: true` |
 | `breath` | animated orb paces the breath for N cycles | `pattern`: `sigh` `resonance` `extended` `box` `4-7-8` `awaken` `hum`, or `[{kind:"in"/"out"/"hold", seconds, label, to}]`; `cycles`; `ready`; `after` |
 | `guided` | timed cues, one at a time, with progress and a pause button | `cues: [{text, seconds}]`, `ready`, `after`, `bell: false` |
 | `sit` | silent timed sit with a bell at each end | `seconds`, `anchor`, `after`, `showTime: false` |
