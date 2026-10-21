@@ -10,6 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
+import http from "node:http";
 import { pathToFileURL } from "node:url";
 
 const dir = process.argv[2];
@@ -31,8 +32,19 @@ fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
 // The Artifact host wraps the page in this skeleton at publish time; mirror it locally.
 const shell = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${page_}</body></html>`;
-const file = path.join(outDir, "index.html");
-fs.writeFileSync(file, shell);
+fs.writeFileSync(path.join(outDir, "index.html"), shell);
+// Serve the session folder over HTTP so the page can load its narration clips like it does when published.
+let clipsServed = 0;
+const server = http.createServer((req, res) => {
+  const url = decodeURIComponent(req.url.split("?")[0]);
+  const file = url === "/" ? path.join(outDir, "index.html") : path.join(dir, path.normalize(url).replace(/^(\.\.[/\\])+/, ""));
+  if (!file.startsWith(path.resolve(dir)) && !file.startsWith(dir) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
+  if (url.startsWith("/audio/")) clipsServed++;
+  res.writeHead(200, { "content-type": file.endsWith(".html") ? "text/html" : file.endsWith(".mp3") ? "audio/mpeg" : "application/octet-stream" });
+  fs.createReadStream(file).pipe(res);
+});
+await new Promise(r => server.listen(0, "127.0.0.1", r));
+const pageUrl = `http://127.0.0.1:${server.address().port}/`;
 
 const browser = await chromium.launch();
 const problems = [];
@@ -43,7 +55,7 @@ async function walk(label, viewport) {
   page.on("console", m => { if (m.type() === "error" && !/fonts\.(googleapis|gstatic)/.test(m.text())) problems.push(`[${label}] console: ${m.text()}`); });
   page.on("pageerror", e => problems.push(`[${label}] error: ${e.message}`));
   await page.addInitScript(() => { window.__INNERSKY_TIMESCALE = 0.03; try { localStorage.clear(); } catch {} });
-  await page.goto(pathToFileURL(file).href);
+  await page.goto(pageUrl);
   await page.waitForTimeout(400);
 
   const visited = [];
@@ -100,8 +112,10 @@ async function walk(label, viewport) {
 const visited = await walk("phone", { width: 390, height: 844 });
 if (desktop) await walk("desktop", { width: 1280, height: 820 });
 await browser.close();
+server.close();
 
 console.log(`walked ${visited.length} steps: ${visited.join(" → ")}`);
 console.log(`screenshots: ${outDir}`);
+if (clipsServed) console.log(`narration clips loaded: ${clipsServed}`);
 if (problems.length) { for (const p of problems) console.error("  ✗ " + p); process.exit(1); }
 console.log("✓ no console errors");

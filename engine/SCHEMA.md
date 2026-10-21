@@ -88,6 +88,24 @@ Poses: `stand` `stand-3q` `stand-side` `soft-knees` `reach-up` `yawn` `curl` `ar
 `dance-low` `cat` `cow` `fold` `bj-forward` `bj-wide` `bj-up` `sit`. To add one, edit `poses.json` and
 check it with `node tools/poses.mjs` (writes a contact sheet to `engine/preview/poses.png`).
 
+## Voice: recorded narration
+
+Browser voices vary wildly (an iPhone offers novelty voices such as "Cellos"; Microsoft's natural
+voices exist only in Edge). So the guidance can be **recorded at build time** and shipped with the
+page, sounding the same everywhere:
+
+1. `node tools/narration.mjs lines <dir> --voice "<name>"` writes `narration.json`: every line the page
+   speaks (text lines, guided cues and closing lines, sit anchors, breath phrases), each with a key.
+2. Each line is synthesized once (Claude uses Higgsfield text-to-speech) and fetched with
+   `node tools/narration.mjs fetch <dir> <results.json>` into `<dir>/audio/<key>.mp3`.
+3. `tools/build.mjs` embeds the keys that have clips (`X.narration`) and writes `publish-files.json`,
+   the files to publish beside the page.
+
+With narration, voice guidance is on by default, text steps wait for each spoken line, and lines
+without a clip (echoes of what the person wrote, live companion replies) stay silent rather than
+switching to a device voice. Without narration, the page falls back to the best device voice and
+never picks a novelty voice.
+
 ## Branching
 
 `when` hides a step unless its condition holds (several conditions in an array must all hold):

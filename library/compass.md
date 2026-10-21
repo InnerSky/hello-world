@@ -70,11 +70,13 @@ Choose **one primary movement** and at most one secondary. This is the most impo
   It also picks the sky. Don't open a dawn sky at midnight.
 - **What they already know works** (and what doesn't). Read `private/profile.md`.
 
-## 6. The growing edge
+## 6. The growing edge and the being objective
 
 What is the one step of growth this person is ready for **today**? A good experience lands
 just at the edge: not so safe that nothing happens, not so far that they brace or defend. Name it
 in one sentence ("to let the tiredness be real without making it mean something about them").
+Then name the **being objective** (`foundation.md`): the shift in self-perception the experience
+creates conditions for. It's an aim, not a promise; the person discovers what actually happens.
 
 ## 7. The Reading (write this before composing)
 
@@ -101,6 +103,9 @@ Primary: <one> · Secondary: <optional>
 
 ## Growing edge
 <one sentence>
+
+## Being objective (see foundation.md)
+<how they might perceive themselves, others or their world differently afterwards>
 
 ## Council (5–7 lenses; see lenses.md)
 - <Lens>: what it sees · what it offers

@@ -376,7 +376,7 @@ const STEPS = [];
 { let mv = MOVES[0].id; for (const s of X.steps) { if (s.movement) mv = s.movement; STEPS.push(Object.assign({}, s, { movement: mv })); } }
 const moveIndex = id => Math.max(0, MOVES.findIndex(m => m.id === id));
 
-const S = { runId: null, startedAt: null, index: 0, history: [], answers: {}, measure: {}, completed: false, sound: !(X.sound && X.sound.default === "off"), voice: false, voiceName: null, feedback: {} };
+const S = { runId: null, startedAt: null, index: 0, history: [], answers: {}, measure: {}, completed: false, sound: !(X.sound && X.sound.default === "off"), voice: !!(X.narration && X.narration.keys && X.narration.keys.length), voiceName: null, feedback: {} };
 let resumeAt = 0, lastDone = false; // lastDone: a finished run in this browser that can still be looked back on
 try {
   const v = JSON.parse(localStorage.getItem(KEY) || "null");
@@ -472,7 +472,30 @@ const audio = (() => {
     return true;
   }
   function ramp(param, value, sec) { const t = ctx.currentTime; param.cancelScheduledValues(t); param.setValueAtTime(param.value, t); param.linearRampToValueAtTime(value, t + sec); }
+  let clip = null; // the narration clip playing now: {src, done}
+  const buffers = new Map();
+  function load(url) {
+    if (!buffers.has(url)) buffers.set(url, fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(b => new Promise((res, rej) => ctx.decodeAudioData(b, res, rej))));
+    return buffers.get(url);
+  }
   return {
+    ready() { if (!init()) return false; if (ctx.resume) ctx.resume(); return true; },
+    preload(urls) { if (ctx) urls.forEach(u => load(u).catch(() => {})); },
+    // play a recorded line; resolves when it ends, is stopped, or fails
+    voice(url) {
+      this.quiet();
+      if (!ctx) return Promise.resolve();
+      return load(url).then(buf => new Promise(res => {
+        const src = ctx.createBufferSource(), g = ctx.createGain();
+        src.buffer = buf; g.gain.value = 1; src.connect(g); g.connect(ctx.destination);
+        const done = () => { if (clip && clip.src === src) clip = null; if (bed && !hushed) ramp(bed.gain, 1, 1.5); res(); };
+        src.onended = done; clip = { src, done };
+        if (bed && !hushed) ramp(bed.gain, .45, .4);
+        src.start();
+      })).catch(() => {});
+    },
+    quiet() { if (clip) { const c = clip; clip = null; try { c.src.onended = null; c.src.stop(); } catch (e) {} c.done(); } },
     start() { if (!init()) return; if (ctx.resume) ctx.resume(); ramp(master.gain, .55, 4); on = true; },
     stop() { if (!ctx) return; ramp(master.gain, 0, 1.5); on = false; },
     duck(d) { if (ctx && on) ramp(master.gain, d ? .18 : .55, 1); },
@@ -494,9 +517,14 @@ const audio = (() => {
   };
 })();
 
-/* ---------- voice guidance via the browser's speech synthesis ----------
-   Prefers natural (neural) voices: Microsoft Edge offers Andrew, Ryan, Ava, Emma and others to pages;
-   Apple devices offer Enhanced and Premium voices once downloaded. The person can pick any voice. */
+/* ---------- voice guidance ----------
+   Recorded narration (X.narration: clips made at build time, one per line of guidance) plays when
+   it exists, so the voice is the same on every device. Without it, the browser's own voices are
+   used: natural ones first (Edge offers Andrew, Ryan and others), novelty voices never.
+   narrKey must match tools/narration.mjs. */
+const narrKey = t => { let h = 0x811c9dc5; for (const ch of t.replace(/\s+/g, " ").trim()) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, "0"); };
+const NARR = new Set((X.narration && X.narration.keys) || []), narrUrl = k => (X.narration.base || "audio/") + k + ".mp3";
+const NOVELTY = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Junior|Kathy|Ralph|Grandma|Grandpa|Eddy|Flo|Reed|Rocko|Sandy|Shelley)\b/i;
 const speech = (() => {
   const ok = "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
   const lang = (X.lang || "en").slice(0, 2).toLowerCase();
@@ -506,27 +534,39 @@ const speech = (() => {
     const i = PREFER.findIndex(p => v.name.includes(p));
     return (natural(v) ? 300 : rich(v) ? 200 : /google/i.test(v.name) ? 100 : 0) + (i >= 0 ? 60 - i : 0) + (v.localService ? 1 : 0);
   };
-  let chosen = null;
-  const list = () => { try { return speechSynthesis.getVoices().filter(v => (v.lang || "").toLowerCase().startsWith(lang)).sort((a, b) => rank(b) - rank(a)); } catch (e) { return []; } };
+  let chosen = null, pending = null;
+  const list = () => { try { return speechSynthesis.getVoices().filter(v => (v.lang || "").toLowerCase().startsWith(lang) && !NOVELTY.test(v.name)).sort((a, b) => rank(b) - rank(a)); } catch (e) { return []; } };
   const current = () => { if (!chosen) { const vs = list(); chosen = (S.voiceName && vs.find(v => v.name === S.voiceName)) || vs[0] || null; } return chosen; };
   if (ok && speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", () => { chosen = null; });
-  return {
-    ok, list, current,
-    label: v => v.name.replace(/^Microsoft\s+/, "").replace(/\s+Online/, "").replace(/\s*-\s*English\s*\((.+)\)\s*$/, " · $1"),
-    choose(name) { S.voiceName = name; chosen = null; },
-    onVoices(fn) { if (ok && speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", fn); },
-    say(text, o) {
-      o = o || {};
-      if (!ok || !text || !(S.voice || o.force)) return;
+  function device(text, o) {
+    if (!ok) return Promise.resolve();
+    return new Promise(res => {
       try {
-        if (!o.queue) speechSynthesis.cancel();
+        if (!o.queue) { speechSynthesis.cancel(); if (pending) pending(); }
         const u = new SpeechSynthesisUtterance(text), v = current();
         if (v) { u.voice = v; u.lang = v.lang; }
         u.rate = v && natural(v) ? .93 : .86;
-        speechSynthesis.speak(u);
-      } catch (e) {}
+        const t = setTimeout(res, 1500 + text.length * 110); // some browsers never fire onend
+        u.onend = u.onerror = () => { clearTimeout(t); res(); };
+        pending = res; speechSynthesis.speak(u);
+      } catch (e) { res(); }
+    });
+  }
+  return {
+    ok, list, current, recorded: NARR.size > 0,
+    label: v => v.name.replace(/^Microsoft\s+/, "").replace(/\s+Online/, "").replace(/\s*-\s*English\s*\((.+)\)\s*$/, " · $1"),
+    choose(name) { S.voiceName = name; chosen = null; },
+    onVoices(fn) { if (ok && speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", fn); },
+    // resolves when the line has been spoken (or straight away if nothing is spoken)
+    say(text, o) {
+      o = o || {};
+      if (!text || !(S.voice || o.force)) return Promise.resolve();
+      const k = narrKey(text);
+      if (NARR.has(k)) { if (ok) speechSynthesis.cancel(); return audio.voice(narrUrl(k)); }
+      if (NARR.size && !o.device) return Promise.resolve(); // don't mix a device voice into recorded narration
+      return device(text, o);
     },
-    stop() { if (ok) try { speechSynthesis.cancel(); } catch (e) {} }
+    stop() { audio.quiet(); if (ok) try { speechSynthesis.cancel(); } catch (e) {} if (pending) { pending(); pending = null; } }
   };
 })();
 
@@ -689,6 +729,8 @@ async function show(dir) {
   busy = false;
 }
 function begin() {
+  audio.ready();
+  if (NARR.size) audio.preload([...NARR].map(narrUrl));
   if (S.sound) audio.start();
   keepAwake();
   if (!S.runId) { S.runId = "run-" + new Date().toISOString().slice(0, 10) + "-" + Math.random().toString(36).slice(2, 8); S.startedAt = new Date().toISOString(); }
@@ -705,6 +747,7 @@ const BREATH = {
   awaken:    [{ kind: "in", seconds: 2, label: "in" }, { kind: "out", seconds: 1.5, label: "out" }],
   hum:       [{ kind: "in", seconds: 4, label: "in" }, { kind: "out", seconds: 8, label: "hmmm…", say: "hum" }]
 };
+const breathPhrase = p => p.say || (p.seconds >= 2.5 ? { in: "breathe in", out: "and out", hold: "hold" }[p.kind] : "");
 const breathPhases = p => Array.isArray(p) ? p.map(x => ({ kind: x.kind || "in", seconds: Number(x.seconds) || 4, label: x.label || x.kind || "", to: x.to, say: x.say, figure: x.figure })) : (BREATH[p] || BREATH.extended);
 const REGIONS = [["head", "head & face"], ["throat", "throat"], ["chest", "chest"], ["belly", "belly"], ["pelvis", "hips & pelvis"], ["arms", "shoulders & arms"], ["hands", "hands"], ["legs", "legs"], ["feet", "feet"], ["back", "back"], ["everywhere", "everywhere"], ["unclear", "hard to say"]];
 
@@ -720,10 +763,11 @@ const RENDER = {
     if (meta.children.length) screen.append(meta);
     const prefs = el("div", { class: "prefs" },
       el("button", { class: "chip", type: "button", "data-pref": "sound" }),
-      speech.ok ? el("button", { class: "chip", type: "button", "data-pref": "voice" }) : null);
+      el("button", { class: "chip", type: "button", "data-pref": "voice" }));
     prefs.addEventListener("click", e => { const b = e.target.closest("[data-pref]"); if (b) (b.dataset.pref === "sound" ? toggleSound : toggleVoice)(); });
     screen.append(prefs);
-    if (speech.ok) screen.append(voicePicker());
+    if (speech.recorded) screen.append(el("p", { class: "note-small", text: "Voice guidance is narrated by " + (X.narration.voice || "a recorded voice") + ". Turn it off any time with the voice button at the top." }));
+    else if (speech.ok) screen.append(voicePicker());
     const nCompanion = STEPS.filter(s => s.type === "companion").length;
     const notes = [];
     if (nCompanion) notes.push((nCompanion === 1 ? "At one moment" : "At " + nCompanion + " moments") + ", Claude responds to what you've written. The first time, you may be asked to allow it.");
@@ -767,8 +811,9 @@ const RENDER = {
       await sc.wait(.4);
       for (let i = 0; i < ps.length && !done; i++) {
         ps[i].classList.add("on");
-        if (step.voice || (S.voice && step.voice !== false)) speech.say(ps[i].textContent, { queue: i > 0 });
-        if (i < ps.length - 1) { const w = ps[i].textContent.split(/\s+/).filter(Boolean).length; await sc.wait(step.pace != null ? step.pace : Math.min(5.5, 1.2 + w * .26)); }
+        const said = step.voice || (S.voice && step.voice !== false) ? speech.say(ps[i].textContent) : null;
+        if (i < ps.length - 1) { const w = ps[i].textContent.split(/\s+/).filter(Boolean).length; await Promise.all([said, sc.wait(step.pace != null ? step.pace : Math.min(5.5, 1.2 + w * .26))]); }
+        else await said;
       }
       await sc.wait(.6); finish();
     })();
@@ -795,13 +840,15 @@ const RENDER = {
           if (scale != null) { orb.style.transitionDuration = (p.seconds * TS) + "s"; orb.style.transform = "scale(" + scale + ")"; }
           if (fig && p.figure) fig.go(p.figure, p.seconds * .9);
           audio.breath(p.kind, p.seconds);
-          if (p.cycle < 2) speech.say(p.say || p.label);
+          const phrase = breathPhrase(p);
+          if (p.cycle < 2 && phrase) speech.say(phrase);
         },
         onDone() {
           dots.children[cycles - 1].className = "done";
           orb.style.transitionDuration = (2 * TS) + "s"; orb.style.transform = "scale(.7)";
           if (fig) fig.go(step.figureEnd || "stand", 2);
           label.innerHTML = fill(step.after || "rest here");
+          if (step.after) speech.say(plain(step.after));
           audio.breath("rest", 2); audio.bell(.5);
           setNext(step.cta || "Continue");
         }
@@ -833,7 +880,7 @@ const RENDER = {
         onDone() {
           pause.remove(); bar.style.width = "100%";
           if (step.bell !== false) audio.bell(.6);
-          if (step.after) swap(cue, fill(step.after), sc);
+          if (step.after) { swap(cue, fill(step.after), sc); speech.say(plain(step.after)); }
           setNext(step.cta || "Continue");
         }
       });
@@ -855,7 +902,7 @@ const RENDER = {
         onTick(f, left) { time.textContent = step.showTime === false ? "" : fmt(left); },
         onDone() {
           ring.classList.remove("on"); time.textContent = ""; audio.bell(.7);
-          if (step.after) swap(anchor, fill(step.after), sc);
+          if (step.after) { swap(anchor, fill(step.after), sc); speech.say(plain(step.after)); }
           setNext(step.cta || "Continue");
         }
       });
@@ -1280,14 +1327,15 @@ function openLookback() {
 /* ---------- controls ---------- */
 const soundBtn = $("#sound"), voiceBtn = $("#voice"), overlay = $("#overlay");
 function renderPrefs() {
-  soundBtn.setAttribute("aria-pressed", String(S.sound)); voiceBtn.setAttribute("aria-pressed", String(S.voice)); voiceBtn.hidden = !speech.ok;
+  soundBtn.setAttribute("aria-pressed", String(S.sound)); voiceBtn.setAttribute("aria-pressed", String(S.voice)); voiceBtn.hidden = !speech.ok && !speech.recorded;
+  document.querySelectorAll("[data-pref=voice]").forEach(b => { b.hidden = !speech.ok && !speech.recorded; });
   document.querySelectorAll("[data-pref]").forEach(b => {
     const k = b.dataset.pref; b.setAttribute("aria-pressed", String(S[k]));
     b.textContent = (k === "sound" ? "Ambient sound" : "Voice guidance") + (S[k] ? " · on" : " · off");
   });
 }
 function toggleSound() { S.sound = !S.sound; if (S.sound) { if (S.runId) audio.start(); } else audio.stop(); renderPrefs(); saveLocal(); }
-function toggleVoice() { S.voice = !S.voice; if (S.voice) speech.say("I'll speak the guidance.", { force: true }); else speech.stop(); renderPrefs(); saveLocal(); }
+function toggleVoice() { S.voice = !S.voice; audio.ready(); if (S.voice) speech.say("I'll speak the guidance.", { force: true, device: !speech.recorded }); else speech.stop(); renderPrefs(); saveLocal(); }
 soundBtn.addEventListener("click", toggleSound);
 voiceBtn.addEventListener("click", toggleVoice);
 function openSteady() { PAUSED = true; speech.stop(); audio.duck(true); overlay.hidden = false; $("#steady-back").focus(); }

@@ -111,6 +111,20 @@ if (X.duration && Math.abs(total - X.duration) / X.duration > .35) warn(`estimat
 for (const w of warnings) console.log(`  ! ${w}`);
 if (errors.length) { for (const e of errors) console.error(`  ✗ ${e}`); console.error(`✗ ${errors.length} error(s); nothing written.`); process.exit(1); }
 
+// recorded narration: embed the keys that have a clip, and list the files to publish beside the page
+const narrList = path.join(dir, "narration.json");
+let publishFiles = null;
+if (fs.existsSync(narrList)) {
+  const N = JSON.parse(fs.readFileSync(narrList, "utf8"));
+  const have = N.lines.filter(l => fs.existsSync(path.join(dir, "audio", l.key + ".mp3")));
+  if (have.length) {
+    X.narration = { voice: N.voice || null, base: "audio/", keys: have.map(l => l.key) };
+    publishFiles = Object.fromEntries(have.map(l => ["audio/" + l.key + ".mp3", path.join(dir, "audio", l.key + ".mp3")]));
+    fs.writeFileSync(path.join(dir, "publish-files.json"), JSON.stringify(publishFiles, null, 1) + "\n");
+  }
+  console.log(`  narration: ${have.length}/${N.lines.length} lines recorded${N.voice ? " (" + N.voice + ")" : ""}${have.length < N.lines.length ? "; the rest stay silent" : ""}`);
+}
+
 const json = JSON.stringify(X).replace(/</g, "\\u003c").replace(/[\u2028\u2029]/g, c => "\\u" + c.charCodeAt(0).toString(16));
 const skiesJson = JSON.stringify(skies).replace(/</g, "\\u003c");
 const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -124,5 +138,6 @@ const out = path.join(dir, "experience.html");
 fs.writeFileSync(out, html);
 
 console.log(`✓ ${X.title} → ${out} (${(html.length / 1024).toFixed(0)} KB)`);
+if (publishFiles) console.log(`  publish with files from ${path.join(dir, "publish-files.json")} (${Object.keys(publishFiles).length} clips)`);
 console.log(`  ${steps.length} steps · ~${total.toFixed(0)} min estimated${X.duration ? ` (stated ${X.duration})` : ""}`);
 for (const m of moves) console.log(`    ${String(m.name || m.id).padEnd(12)} ${(perMove.get(m.id) / 60).toFixed(1).padStart(5)} min  · sky: ${m.sky}`);

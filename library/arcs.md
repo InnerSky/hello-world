@@ -18,6 +18,10 @@ Movements can be renamed, merged or added to fit the experience ("Harbor", "Clea
 
 ## Principles of pacing
 
+0. **Experience, then reflect, then make meaning.** Each block of direct experience (body, breath,
+   ritual, probe) is followed by a moment to process it. The person's own words are the harvest
+   (`foundation.md`).
+
 1. **Safety before depth.** Settle before Meet. Always.
 2. **Pendulation.** Alternate between the hard and the resourced. After every difficult step, offer
    a breath, a resource or a widening.

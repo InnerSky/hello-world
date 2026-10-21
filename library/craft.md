@@ -73,6 +73,9 @@ People feel unsure when a movement is only described. Every physical step needs:
    run longer than the estimate when something deep happens.
 10. **Movement test.** Does every physical cue have a starting position, a clear action and a figure?
     Is there an alternative for every requirement (music, standing, sound, space)?
+11. **Transformation test.** Is there a being objective, and at least one moment where the person
+    discovers something for themselves rather than being told it? Is every block of experience
+    followed by a moment to reflect? Does it end with new meaning in their own words?
 
 ## Writing the companion instructions
 

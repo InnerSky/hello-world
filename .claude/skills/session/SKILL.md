@@ -31,11 +31,11 @@ Then at most one round of follow-ups, using clean-language style ("And when you 
 X is that?", "And where do you feel that?"). Two rounds is the limit unless they want to talk.
 **Screen for red flags** (`safety.md`). If they say "just make something", make it.
 
-## 2. Read: `library/compass.md`, `library/lenses.md`
+## 2. Read: `library/foundation.md`, `library/compass.md`, `library/lenses.md`
 
 Write `private/sessions/<YYYY-MM-DD-slug>/attune.md` (their words, verbatim where possible) and
 `reading.md` (the template in compass.md). Consult 5–7 lenses explicitly. Choose ONE primary
-movement and a throughline image.
+movement, a throughline image, and the being objective.
 
 Then mirror it back to them in 3–5 lines: what you heard, what you sense they need, the shape you'll
 make. If it's clear, go straight on and build; they can correct it later. Pause for confirmation
@@ -65,6 +65,17 @@ node tools/preview.mjs private/sessions/<id>    # walks every step in Chromium, 
 node tools/preview.mjs private/sessions/<id> --choose <stepId>=<n>   # walk another branch
 ```
 
+**Narration** (recorded voice; the voice to use is in `private/profile.md`):
+```bash
+node tools/narration.mjs lines private/sessions/<id> --voice "<name>"   # prints lines still to record
+```
+Synthesize them with Higgsfield `generate_audio_batch` (model `seed_audio`, `voice_type: "preset"`,
+the profile's `voice_id`, `format: "mp3"`, `speech_rate: -12`), up to 12 per batch, then `jobs_wait`.
+Save `[{key, url}]` to `<dir>/narration-results.json` and run
+`node tools/narration.mjs fetch <dir> <dir>/narration-results.json`, then build again. It costs about
+0.5 credits per line. If the clips can't be fetched (the environment must allow
+`d8j0ntlcm91z4.cloudfront.net`), publish without narration and say so.
+
 Fix every build error. Look at 3–4 screenshots (threshold, the Turn, the card), plus any step
 that looked risky. Then run the craft tests in `craft.md`: read the whole script as the person will
 experience it and rewrite weak or generic lines. One careful revision pass, then rebuild.
@@ -74,6 +85,7 @@ experience it and rewrite weak or generic lines. One careful revision pass, then
 Publish `private/sessions/<id>/experience.html` with the Artifact tool:
 - `icon`: `"sun"` on first publish; `description`: one sentence on what it's for.
 - `capabilities`: `{"db": {"rules": [{"path": "", "read": "owner", "write": "owner"}]}, "sample": {}, "downloads": true}`
+- `files`: the map in `<dir>/publish-files.json` when the experience has narration.
 - Then check once with `ArtifactData` (`list` on `runs`). It's empty until they begin, which is expected.
 
 Reply briefly: the link, its name and length, what to have ready, and "come back and tell me how

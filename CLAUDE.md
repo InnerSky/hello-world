@@ -22,7 +22,8 @@ Read `DESIGN.md` for the idea and `.claude/skills/session/SKILL.md` for how to r
   `engine/poses.json` and `engine/figure.js` (the demonstrating figure). The build injects the
   script, skies, poses and figure. Check new poses with `node tools/poses.mjs`.
 - Keep `engine/SCHEMA.md`, `tools/build.mjs` (TYPES, BREATH) and the engine's renderers in sync
-  when adding a step type.
+  when adding a step type. `narrKey` in the engine and in `tools/narration.mjs` must stay identical,
+  and the lines `narration.mjs` collects must match what the engine speaks.
 - After engine changes, rebuild and walk the sample: `node tools/build.mjs examples/sample &&
   node tools/preview.mjs examples/sample --desktop`.
 - Match the existing style: plain JS, no dependencies, small helpers, comments only where they help.

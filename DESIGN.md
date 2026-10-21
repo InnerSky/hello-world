@@ -45,8 +45,13 @@ flowchart LR
 ## Why it should work reliably
 
 Most "wellness content" is generic: the same breathing exercise for everyone, regardless of state.
-Reliability here comes from five design decisions:
+Reliability here comes from six design decisions:
 
+- **Built for being, not only knowing or doing.** The architecture follows *Designing & Leading
+  Life-Changing Workshops*: weave information (knowing) and practice (doing) toward a shift in how
+  the person sees themselves (being). Each experience creates conditions for that shift through
+  self-inquiry, with the body preparing the ground and reflection after each experience. The person
+  is the agent of their own learning. See `library/foundation.md`.
 - **State before content.** The Compass decides *what kind of shift* is needed before choosing
   any practice. An activated nervous system gets regulated first; a shut-down one gets gently
   upshifted; only an open one goes deep. Mismatching state and practice is the most common
@@ -68,6 +73,7 @@ Reliability here comes from five design decisions:
 | Path | What it is |
 |---|---|
 | `.claude/skills/session/SKILL.md` | the workflow Claude follows to run a session (type `/session`) |
+| `library/foundation.md` | the architecture: knowing, doing and being; creating conditions for transformation |
 | `library/compass.md` | how to read the moment and write the Reading |
 | `library/lenses.md` | the council: ~30 traditions, their questions, moves and cautions |
 | `library/practices.md` | the atlas: ~60 practices mapped to engine steps |
@@ -79,6 +85,8 @@ Reliability here comes from five design decisions:
 | `engine/SCHEMA.md` | the script format |
 | `tools/build.mjs` | validates a script, estimates timing, builds the page |
 | `tools/preview.mjs` | walks an experience in headless Chromium and screenshots each step |
+| `tools/narration.mjs` | lists the lines to narrate and fetches the recorded clips |
+| `tools/poses.mjs` | renders every figure pose to a contact sheet |
 | `examples/sample/` | a complete example experience |
 | `private/` | your sessions, reflections and profile (git-ignored while the repo is public) |
 
@@ -92,8 +100,9 @@ One page, no dependencies besides fonts. It's designed to feel like a quiet room
   singing-bowl bell at each new movement. Optional voice guidance uses the browser's speech.
 - **A demonstrating figure.** Movements are shown by a simple animated figure that moves in time
   with the cues and breath, and previews the whole sequence before you start.
-- **Natural voices.** Voice guidance prefers natural voices (Andrew, Ryan and others in Microsoft
-  Edge; Enhanced and Premium voices on Apple devices), with a voice picker on the first screen.
+- **A real voice.** Guidance can be narrated by a recorded neural voice, synthesized when the
+  experience is built and shipped with the page, so it sounds the same on every device. Without it,
+  the page uses the best device voice (natural voices first, novelty voices never) with a picker.
 - **Freedom by default.** The first screen says you can change anything: adjust a stretch, sing
   instead of playing a song, skip or invent.
 - **Look back.** After the closing card, every step can be revisited and marked helped / okay /
