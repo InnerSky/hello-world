@@ -355,7 +355,7 @@ function saveLocal() {
   try { localStorage.setItem(KEY, JSON.stringify({ runId: S.runId, startedAt: S.startedAt, index: S.index, history: S.history, answers: S.answers, measure: S.measure, completed: S.completed, sound: S.sound, voice: S.voice })); } catch (e) {}
 }
 function setAnswer(step, value, extra) {
-  S.answers[step.id] = Object.assign({ type: step.type, prompt: plain(step.prompt || step.title || step.instruction || "") , value }, step.private ? { private: true } : {}, extra || {});
+  S.answers[step.id] = Object.assign({ type: step.type, prompt: plain(step.prompt || step.title || ""), value }, step.private ? { private: true } : {}, extra || {});
   saveLocal(); sync.soon();
 }
 function passes(step) {
@@ -961,7 +961,7 @@ const RENDER = {
     sc.onEnd(() => { if (ctl) ctl.abort(); });
     setNext(step.cta || "Continue", { quiet: true });
     const note = () => { const by = el("span", { class: "by" }), body = el("div", { class: "body" }); screen.append(el("div", { class: "note" }, by, body)); return { by, body }; };
-    const record = live => setAnswer(step, convo.filter(t => t.role === "assistant").map(t => t.content).join("\n\n"), { live, exchange: convo.slice() });
+    const record = live => setAnswer(step, convo.filter(t => t.role === "assistant").map(t => t.content).join("\n\n"), { live, exchange: convo.slice(), prompt: plain(step.title || "") || "Claude's response" });
     function useFallback(n) {
       n.by.textContent = step.fallbackBy || "a note written for you";
       n.body.innerHTML = fill(step.fallback || "Read back what you've written so far, slowly, as if a friend had written it. What do you notice?");

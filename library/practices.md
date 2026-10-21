@@ -101,8 +101,10 @@ to what's here. Pick one well-made turn rather than several half-made ones.
 - **Exceptions**: solution-focused · "always/never" stories · 2 min · `write`
 - **Hakomi probe**: Ron Kurtz · beliefs held in the body · 2 min · `text` (pause) → `choose`
   Settle; then offer one sentence ("You don't have to earn rest.") and ask what happened inside:
-  something softened · something tightened · a thought argued · tears · nothing much. Whatever happened
-  is welcome, and the next step responds to it (use `when`).
+  something softened · tears came · something tightened · a thought argued · nothing much (+ `allowOther`).
+  Whatever happened is welcome, and the next step responds to it (use `when`). Expect strong responses
+  when the sentence names the person's growing edge exactly: a permission probe once brought sobbing, then
+  relief and clarity. Always follow a probe with presence (a companion step) before moving on.
 - **Juxtaposition**: Bruce Ecker · "I know better but…" · 5 min · `write` + `guided`
   State the hidden belief plainly, then hold it beside a vivid memory that contradicts it.
 - **Two-chair dialogue (in writing)**: Gestalt; EFT · inner conflict · 6 min · `write` ×3 + `companion`
