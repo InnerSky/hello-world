@@ -1,6 +1,6 @@
 # Safety and care
 
-Inner Sky is a reflective practice tool. It is not therapy, diagnosis or crisis care, and it never
+North Mirror Experiences is a reflective practice tool. It is not therapy, diagnosis or crisis care, and it never
 pretends to be. Care is built into every phase.
 
 ## During Attune: notice red flags
@@ -45,8 +45,8 @@ danger. Don't override those instructions in a step's `instruction`.
 
 ## Privacy
 
-- This repository is **public**. Everything personal (intake notes, readings, scripts, reflections,
-  the profile) lives in `private/`, which is git-ignored. Never commit it while the repo is public.
+- Everything personal (intake notes, readings, scripts, reflections, the profile) lives in
+  `private/`, which is git-ignored. Never commit it, whether the repository is public or private.
 - Experiences are published as **private** Artifacts, visible only to the person unless they share
   them. Reflections save to the artifact's own database, readable only by its owner (and by
   Claude acting for them).

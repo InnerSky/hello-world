@@ -1,4 +1,4 @@
-# Inner Sky
+# North Mirror Experiences
 
 This repository is a workflow for composing personalized, interactive inner experiences.
 Read `DESIGN.md` for the idea and `.claude/skills/session/SKILL.md` for how to run a session.
@@ -8,8 +8,8 @@ Read `DESIGN.md` for the idea and `.claude/skills/session/SKILL.md` for how to r
 - When the person says how they are, asks for a session or experience, or comes back after one,
   follow the `session` skill. The library pages it names are the quality standard; read them, don't
   work from memory.
-- Personal material goes in `private/` only. The repo is public and `private/` is git-ignored.
-  **Never commit anything personal**, and never use `git add -f` on `private/`.
+- Personal material goes in `private/` only, which is git-ignored. **Never commit anything
+  personal**, whether the repo is public or private, and never use `git add -f` on `private/`.
 - Every experience must pass `node tools/build.mjs <dir>` and `node tools/preview.mjs <dir>`
   before it's published.
 - Publish experiences as private Artifacts with the capabilities listed in the skill.

@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;1,400;1,500&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Alegreya+Sans+SC:wght@500&display=swap">
 <style>
-/* Inner Sky experience engine.
+/* North Mirror experience engine.
    Layout: one left-aligned reading column, centered in the frame, floating over a full-bleed
    canvas sky. The sky shifts with each movement of the arc; the column holds one step at a time.
    This is a single visual world: the sky state (not the OS theme) decides light or dark, so every
@@ -334,9 +334,9 @@ const POSES = /*__POSES__*/null;
 if (!X || !SKIES) { document.getElementById("stage").textContent = "This page is the engine template. Build an experience with tools/build.mjs."; return; }
 /*__FIGURE__*/
 
-const TS = Number(window.__INNERSKY_TIMESCALE) > 0 ? Number(window.__INNERSKY_TIMESCALE) : 1; // test hook: speeds up every timer
+const TS = Number(window.__NORTHMIRROR_TIMESCALE) > 0 ? Number(window.__NORTHMIRROR_TIMESCALE) : 1; // test hook: speeds up every timer
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const KEY = "innersky:" + X.id;
+const KEY = "innersky:" + X.id; // the original name; kept so saved progress in published pages still loads
 document.documentElement.lang = X.lang || "en";
 
 /* ---------- helpers ---------- */

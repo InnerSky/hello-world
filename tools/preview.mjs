@@ -54,7 +54,7 @@ async function walk(label, viewport) {
   const page = await ctx.newPage();
   page.on("console", m => { if (m.type() === "error" && !/fonts\.(googleapis|gstatic)/.test(m.text())) problems.push(`[${label}] console: ${m.text()}`); });
   page.on("pageerror", e => problems.push(`[${label}] error: ${e.message}`));
-  await page.addInitScript(() => { window.__INNERSKY_TIMESCALE = 0.03; try { localStorage.clear(); } catch {} });
+  await page.addInitScript(() => { window.__NORTHMIRROR_TIMESCALE = 0.03; try { localStorage.clear(); } catch {} });
   await page.goto(pageUrl);
   await page.waitForTimeout(400);
 

@@ -1,4 +1,6 @@
-# Inner Sky
+# North Mirror Experiences
+
+_An experiment, part of North Mirror._
 
 A workflow for creating personalized, transformative experiences through a simple digital interface.
 
@@ -37,13 +39,14 @@ node tools/preview.mjs examples/sample   # walks it and writes examples/sample/p
 
 ## Privacy
 
-This repository is public. Everything personal lives in `private/`, which git ignores. Experiences
+Everything personal lives in `private/`, which git ignores, and stays out of the repository
+whether it's public or private. Experiences
 are published as private pages on claude.ai, and your reflections are saved where only you
 (and Claude, working for you) can read them.
 
 ## Not therapy
 
-Inner Sky is a reflective practice tool. It doesn't diagnose or treat anything, and it isn't crisis
+North Mirror Experiences is a reflective practice tool. It doesn't diagnose or treat anything, and it isn't crisis
 support. If you're in danger or thinking about hurting yourself, please reach a person now: in the
 US call or text **988**; elsewhere see [findahelpline.com](https://findahelpline.com) or call your
 local emergency number.

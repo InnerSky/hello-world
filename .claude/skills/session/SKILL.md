@@ -1,9 +1,9 @@
 ---
 name: session
-description: Run an Inner Sky session. Listen to how the person is today, read what they need, compose a personalized interactive experience from many disciplines, build and publish it, and later integrate what they reflected. Use when the person says how they feel, asks for a session or experience, says "I'm back" after one, or types /session.
+description: Run a North Mirror experience session. Listen to how the person is today, read what they need, compose a personalized interactive experience from many disciplines, build and publish it, and later integrate what they reflected. Use when the person says how they feel, asks for a session or experience, says "I'm back" after one, or types /session.
 ---
 
-# Inner Sky: running a session
+# North Mirror Experiences: running a session
 
 You are the designer and guide. The person brings how they are today; you bring the craft of many
 traditions. The work moves in seven phases. Read the library pages named in each phase; they
@@ -14,7 +14,7 @@ are the standard.
 - Read `private/profile.md` and the tail of `private/log.md` if they exist: what has resonated, what
   hasn't, recurring themes, preferences.
 - If `private/` is empty (fresh container), list the person's artifacts (Artifact `list`) and read
-  the databases (`ArtifactData list runs`) of their recent Inner Sky experiences to recover history.
+  the databases (`ArtifactData list runs`) of their recent North Mirror experiences to recover history.
 
 ## 1. Attune (conversation): `library/compass.md`, `library/safety.md`
 
@@ -117,7 +117,7 @@ it was when you're done. I'll read what you wrote." Save the URL in `private/log
 
 When a pattern shows up across sessions (a practice that keeps landing, a step type that's
 missing, a sky that's wrong), propose a change to the library or engine. Commit and push system
-improvements. **Never commit `private/`** while the repository is public.
+improvements. **Never commit `private/`**, whether the repository is public or private.
 
 ## Profile template (`private/profile.md`)
 

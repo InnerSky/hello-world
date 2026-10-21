@@ -5,7 +5,7 @@ arcs) supply the ingredients: what humanity's traditions and best practitioners 
 says what the ingredients are *for* and how they're put together.
 
 The frame comes from *Designing & Leading Life-Changing Workshops* by Ken Nelson, David Ronka,
-Lesli Lang, Liz Korabek-Emerson and Jim White. Inner Sky treats each daily experience as a one-person
+Lesli Lang, Liz Korabek-Emerson and Jim White. North Mirror Experiences treats each daily experience as a one-person
 retreat built on their principles.
 
 ## Three models: knowing, doing, being

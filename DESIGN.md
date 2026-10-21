@@ -1,11 +1,14 @@
-# Inner Sky: design
+# North Mirror Experiences: design
 
-> The sky is always there behind the weather.
+> See yourself clearly, and find your direction.
 
-An image shared by many contemplative traditions: thoughts and feelings are weather, and awareness
-is the sky. Inner Sky is a workflow that takes *today's weather* (how you are right now, what's
-going on, what you think you need) and produces a personalized, interactive experience that helps
-you move toward more clarity, agency, ease, understanding or aliveness, whichever this moment calls for.
+North Mirror Experiences is a workflow that takes how you are today (how you feel, what's going on,
+what you think you need) and produces a personalized, interactive experience that helps you move
+toward more clarity, agency, ease, understanding or aliveness, whichever this moment calls for.
+It's a **mirror** because the person discovers what's true for them by reflecting, not by being
+told (see `library/foundation.md`), and it points **north** because every experience ends with a
+direction of their own. Its visual world is a sky that changes with each movement, after an image
+many contemplative traditions share: thoughts and feelings are weather, and awareness is the sky.
 
 ## What it is
 
@@ -92,7 +95,7 @@ Reliability here comes from six design decisions:
 | `tools/routines.mjs` | renders each routine as a filmstrip and checks its poses and pacing |
 | `tools/expand.mjs` | turns `"routine": "<name>"` steps into full steps (used by build and narration) |
 | `examples/sample/` | a complete example experience |
-| `private/` | your sessions, reflections and profile (git-ignored while the repo is public) |
+| `private/` | your sessions, reflections and profile (git-ignored; never committed) |
 
 ## The experience engine
 

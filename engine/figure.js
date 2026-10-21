@@ -1,4 +1,4 @@
-/* Inner Sky figure: a simple articulated person who demonstrates movements.
+/* North Mirror figure: a simple articulated person who demonstrates movements.
    A pose is a set of joint angles in degrees. The figure is posed in 3D and projected, so it can
    turn (yaw) between front, three-quarter and side views while it moves.
      yaw   0 = facing you, 90 = side view facing right
