@@ -1,0 +1,13 @@
+# Personal session material (intake notes, readings, scripts, reflections, profile).
+# This repository is public, so anything personal stays out of git by default.
+# If you make the repo private, you can delete this line to keep your history in git.
+private/
+
+# Local preview screenshots
+**/preview/
+
+node_modules/
+.DS_Store
+
+# Built pages (rebuild with tools/build.mjs)
+examples/**/experience.html

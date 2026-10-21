@@ -1,0 +1,18 @@
+{
+  "_about": "Sky states for the experience engine. Each movement (or step) names one. ink = the text color family that reads on it. Colors were checked for text contrast across the middle band of the screen.",
+  "mist":        { "top": "#c2c8cc", "mid": "#d9dcdb", "low": "#ebe8e2", "ink": "dark",  "accent": "#4d5a6e", "orb": "#ffffff", "glow": "#ffffff", "glowA": 0.25, "glowX": 0.5,  "glowY": 0.55, "glowR": 0.8,  "stars": 0 },
+  "overcast":    { "top": "#a3adb6", "mid": "#c3c7ca", "low": "#dcd8d0", "ink": "dark",  "accent": "#4b4a7a", "orb": "#f4f1ea", "glow": "#f2efe6", "glowA": 0.18, "glowX": 0.5,  "glowY": 0.9,  "glowR": 0.7,  "stars": 0 },
+  "after-rain":  { "top": "#8ea5b5", "mid": "#bccbcf", "low": "#e2e0cf", "ink": "dark",  "accent": "#2f5a5a", "orb": "#f6f3e4", "glow": "#fff6da", "glowA": 0.30, "glowX": 0.72, "glowY": 0.78, "glowR": 0.6,  "stars": 0 },
+  "clearing":    { "top": "#7aa6cc", "mid": "#b8d3e3", "low": "#f1e7d2", "ink": "dark",  "accent": "#2d5a7a", "orb": "#fff8e6", "glow": "#fff1c9", "glowA": 0.45, "glowX": 0.7,  "glowY": 0.85, "glowR": 0.65, "stars": 0 },
+  "clear":       { "top": "#5f93c8", "mid": "#a3c8e6", "low": "#e6f0f3", "ink": "dark",  "accent": "#1f4f86", "orb": "#ffffff", "glow": "#ffffff", "glowA": 0.35, "glowX": 0.75, "glowY": 0.2,  "glowR": 0.55, "stars": 0 },
+  "golden":      { "top": "#8090b4", "mid": "#e3b086", "low": "#f6d7a7", "ink": "dark",  "accent": "#7a3e1a", "orb": "#fff1d6", "glow": "#ffd89a", "glowA": 0.55, "glowX": 0.3,  "glowY": 0.92, "glowR": 0.7,  "stars": 0 },
+  "first-light": { "top": "#7584a8", "mid": "#cdb0bb", "low": "#f5dcc6", "ink": "dark",  "accent": "#6a3b55", "orb": "#fff3ea", "glow": "#ffe2c4", "glowA": 0.5,  "glowX": 0.5,  "glowY": 1.0,  "glowR": 0.75, "stars": 0.08 },
+  "storm":       { "top": "#2b313c", "mid": "#444b57", "low": "#5d6370", "ink": "light", "accent": "#f0d49a", "orb": "#d8dde6", "glow": "#9aa3b5", "glowA": 0.15, "glowX": 0.5,  "glowY": 0.1,  "glowR": 0.8,  "stars": 0 },
+  "dawn":        { "top": "#1f2848", "mid": "#5e4a72", "low": "#a86a63", "ink": "light", "accent": "#ffd2a8", "orb": "#ffd9c0", "glow": "#ffb98a", "glowA": 0.45, "glowX": 0.5,  "glowY": 1.02, "glowR": 0.7,  "stars": 0.35 },
+  "dusk":        { "top": "#1b2142", "mid": "#4d3d67", "low": "#a0635a", "ink": "light", "accent": "#ffc9a0", "orb": "#ffd6b8", "glow": "#ff9f73", "glowA": 0.38, "glowX": 0.35, "glowY": 1.02, "glowR": 0.7,  "stars": 0.45 },
+  "canopy":      { "top": "#1c2a24", "mid": "#2f4237", "low": "#4f6650", "ink": "light", "accent": "#e3f0c8", "orb": "#e9f4d8", "glow": "#cfe6a8", "glowA": 0.16, "glowX": 0.6,  "glowY": 0.15, "glowR": 0.8,  "stars": 0.1 },
+  "ember":       { "top": "#1a1210", "mid": "#2e1d17", "low": "#5a2f1f", "ink": "light", "accent": "#ffcf8a", "orb": "#ffd9a0", "glow": "#ff8a3d", "glowA": 0.35, "glowX": 0.5,  "glowY": 1.05, "glowR": 0.6,  "stars": 0.15 },
+  "moonlit":     { "top": "#0b1430", "mid": "#1d2c52", "low": "#3a4c78", "ink": "light", "accent": "#dfe6ff", "orb": "#eef2ff", "glow": "#e8eeff", "glowA": 0.3,  "glowX": 0.78, "glowY": 0.14, "glowR": 0.35, "stars": 0.6 },
+  "night":       { "top": "#060a18", "mid": "#101834", "low": "#1f2a4d", "ink": "light", "accent": "#c9d6ff", "orb": "#dfe7ff", "glow": "#7f8fd6", "glowA": 0.12, "glowX": 0.5,  "glowY": 1.0,  "glowR": 0.8,  "stars": 0.9 },
+  "deep":        { "top": "#020308", "mid": "#070b1a", "low": "#0e1530", "ink": "light", "accent": "#e8dcff", "orb": "#efe6ff", "glow": "#6b5fb0", "glowA": 0.1,  "glowX": 0.5,  "glowY": 0.5,  "glowR": 0.9,  "stars": 1.0 }
+}

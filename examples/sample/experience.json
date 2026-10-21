@@ -1,0 +1,106 @@
+{
+  "id": "sample-a-short-clearing",
+  "title": "A Short Clearing",
+  "subtitle": "an example passage for a crowded head",
+  "intention": "To set a few things down, find what is most alive underneath them, and leave with one clear next step.",
+  "duration": 14,
+  "prep": ["somewhere you won't be interrupted", "headphones if you have them"],
+  "context": "This is the engine's built-in example, not a personalized session. Imagine someone who said: 'Too many tabs open in my head. I keep starting things and not finishing. I think I need to slow down but I also feel behind.'",
+  "companion": { "voice": "Unhurried and precise, in the spirit of Eugene Gendlin's Focusing and Ann Weiser Cornell's 'presence' language: you keep company with what is there rather than fixing it." },
+  "measure": { "label": "How spacious it feels inside", "low": "crammed", "high": "spacious" },
+  "movements": [
+    { "id": "arrive",    "name": "Arrive",    "sky": "overcast" },
+    { "id": "settle",    "name": "Settle",    "sky": "after-rain" },
+    { "id": "meet",      "name": "Meet",      "sky": "mist" },
+    { "id": "turn",      "name": "Turn",      "sky": "clearing" },
+    { "id": "integrate", "name": "Integrate", "sky": "golden" },
+    { "id": "return",    "name": "Return",    "sky": "clear" }
+  ],
+  "steps": [
+    { "id": "threshold", "movement": "arrive", "type": "threshold",
+      "lines": ["Too many tabs open. That's where we start.", "Nothing to fix yet. Only to arrive."] },
+    { "id": "before", "type": "scale", "measure": "before",
+      "prompt": "Right now, how spacious does it feel inside?", "low": "crammed", "high": "spacious" },
+    { "id": "welcome", "type": "text",
+      "lines": ["You came here with a lot in your head.", "For the next few minutes, none of it needs an answer.", "We'll make some room first, and then listen."] },
+
+    { "id": "sigh", "movement": "settle", "type": "breath", "pattern": "sigh", "cycles": 5,
+      "title": "Two breaths in, one long breath out.",
+      "lines": ["In through the nose, then a little more on top. Then a slow, unhurried exhale through the mouth.", "The long exhale is the part that tells your body it can ease off."],
+      "after": "Let the breath go back to doing itself." },
+    { "id": "orient", "type": "guided",
+      "title": "Arriving in the room",
+      "lines": ["Eyes open for this one."],
+      "cues": [
+        { "text": "Let your eyes wander slowly around the space you're in.", "seconds": 10 },
+        { "text": "Let them land on something that's pleasant to look at, even slightly.", "seconds": 12 },
+        { "text": "Stay with it. Notice its color, its edges, the light on it.", "seconds": 14 },
+        { "text": "Notice if anything in your body responds. A breath, a softening, nothing at all. Any of these is fine.", "seconds": 14 }
+      ],
+      "after": "You're here." },
+
+    { "id": "where", "movement": "meet", "type": "body",
+      "prompt": "Where do you feel the crowdedness in your body?",
+      "sub": "Tap anywhere it seems to live. A guess is fine." },
+    { "id": "what", "type": "choose",
+      "prompt": "What's most alive right now?",
+      "options": [
+        { "label": "A feeling", "value": "feeling", "hint": "something emotional is underneath" },
+        { "label": "A thought that keeps looping", "value": "thought" },
+        { "label": "Something I need to decide", "value": "decision" }
+      ] },
+    { "id": "feel-words", "type": "words", "when": { "step": "what", "is": "feeling" },
+      "prompt": "Which words come close?",
+      "words": ["restless", "behind", "tender", "tired", "uneasy", "flat", "hopeful", "pressured", "sad", "irritable"],
+      "max": 3 },
+    { "id": "loop", "type": "write", "when": { "step": "what", "is": ["thought", "decision"] },
+      "prompt": "Write the loop exactly as it sounds in your head.",
+      "sub": "Word for word, even if it's unkind or repetitive." },
+    { "id": "felt", "type": "write",
+      "prompt": "If the whole of this had a shape, a texture or an image, what would it be?",
+      "sub": "In Focusing this is called a 'handle': a word or image that fits the felt sense.",
+      "placeholder": "a tight knot… a radio between stations…", "rows": 3 },
+    { "id": "keep-company", "type": "companion",
+      "instruction": "Offer them the experience of being kept company with what they've found. Reflect back their image or handle and the place in the body, in their own words, gently. Then invite them to stay with it for a moment and sense whether it wants anything from them. Do not try to fix or explain it.",
+      "fallback": "Something in you feels like {{felt|this}}, and it lives around your {{where|body}}. You don't need to do anything with it. See if you can just say hello to it, the way you'd nod to someone you recognize across a room." },
+
+    { "id": "set-down", "movement": "turn", "type": "release",
+      "prompt": "Write down the things that are crowding you, and let them go for now.",
+      "sub": "Not forever. Just for the next few minutes.",
+      "placeholder": "the email, the half-finished thing, the conversation…",
+      "after": ["They'll still be there later, if you need them.", "For now, look at the space that's left."] },
+    { "id": "sit", "type": "sit", "seconds": 60,
+      "anchor": "Just this breath. The space where those things were." },
+    { "id": "underneath", "type": "write",
+      "prompt": "In this space, what matters most to you today?",
+      "sub": "One thing. Let it be smaller than you think it should be." },
+
+    { "id": "good", "movement": "integrate", "type": "guided",
+      "title": "Letting it land",
+      "cues": [
+        { "text": "Notice anything that feels even a little better than when you began.", "seconds": 10 },
+        { "text": "Let it fill your attention for a few breaths, the way warmth fills a room.", "seconds": 14 },
+        { "text": "Let it sink in, as if your body could keep it.", "seconds": 12 }
+      ] },
+
+    { "id": "step", "movement": "return", "type": "write",
+      "prompt": "What is one tiny step toward {{underneath|what matters}}?",
+      "sub": "Small enough that you'd do it even on a hard day.",
+      "rows": 2 },
+    { "id": "after", "type": "scale", "measure": "after",
+      "prompt": "And now, how spacious does it feel inside?", "low": "crammed", "high": "spacious" },
+    { "id": "card", "type": "card",
+      "title": "A Short Clearing",
+      "anchor": "There is room underneath the noise.",
+      "practice": { "name": "One long exhale", "lines": ["When the tabs pile up again: two breaths in through the nose, one slow breath out through the mouth. Then ask what matters most right now."] },
+      "next": "{{step|One small step.}}" }
+  ],
+  "lineage": [
+    { "name": "Cyclic sighing", "source": "Balban, Huberman et al., Stanford, 2023" },
+    { "name": "Orienting", "source": "Peter Levine, Somatic Experiencing" },
+    { "name": "Clearing a space & the felt sense", "source": "Eugene Gendlin, Focusing" },
+    { "name": "Keeping company", "source": "Ann Weiser Cornell, Inner Relationship Focusing" },
+    { "name": "Taking in the good", "source": "Rick Hanson" },
+    { "name": "Tiny steps", "source": "BJ Fogg, Tiny Habits" }
+  ]
+}

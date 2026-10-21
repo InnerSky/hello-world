@@ -1,0 +1,1118 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;1,400;1,500&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Alegreya+Sans+SC:wght@500&display=swap">
+<style>
+/* Inner Sky experience engine.
+   Layout: one left-aligned reading column, centered in the frame, floating over a full-bleed
+   canvas sky. The sky shifts with each movement of the arc; the column holds one step at a time.
+   This is a single visual world: the sky state (not the OS theme) decides light or dark, so every
+   color is a token that the engine rewrites for each sky. */
+:root {
+  --sky-mid: #c3c7ca;
+  --ink: #1b2230;
+  --ink-soft: rgb(27 34 48 / .74);
+  --ink-faint: rgb(27 34 48 / .46);
+  --rule: rgb(27 34 48 / .18);
+  --veil: rgb(255 255 255 / .34);
+  --veil-strong: rgb(255 255 255 / .64);
+  --scrim: rgb(236 236 232 / .9);
+  --accent: #4b4a7a;
+  --orb: 244 241 234;
+  --lift: 0 0 18px rgb(255 255 255 / .5);
+  --font-display: "Alegreya", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-body: "Alegreya Sans", "Gill Sans", "Gill Sans MT", "Segoe UI", system-ui, sans-serif;
+  --font-label: "Alegreya Sans SC", "Alegreya Sans", "Gill Sans", system-ui, sans-serif;
+  --s--1: clamp(.84rem, .8rem + .15vw, .92rem);
+  --s-0: clamp(1.02rem, .97rem + .25vw, 1.12rem);
+  --s-1: clamp(1.32rem, 1.18rem + .7vw, 1.62rem);
+  --s-2: clamp(1.7rem, 1.45rem + 1.2vw, 2.25rem);
+  --s-3: clamp(2.3rem, 1.85rem + 2.2vw, 3.4rem);
+  --col: 34rem;
+  color-scheme: light;
+}
+:root[data-ink="light"] { color-scheme: dark; }
+html { height: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  height: 100%; margin: 0; overflow: hidden;
+  background: var(--sky-mid); color: var(--ink);
+  font-family: var(--font-body); font-size: var(--s-0); line-height: 1.55;
+  -webkit-font-smoothing: antialiased; transition: color .9s ease;
+}
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.app {
+  position: relative; z-index: 1; height: 100%;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* top bar: where you are in the arc, and the three always-there controls */
+.top { display: flex; align-items: center; gap: 14px; width: 100%; max-width: 46rem; margin-inline: auto; padding-block: 12px 4px; }
+.where { display: grid; gap: 7px; flex: 1; min-width: 0; }
+.movement { font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .09em; color: var(--ink-soft); text-shadow: var(--lift); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arc { display: flex; gap: 5px; max-width: 200px; }
+.arc i { flex: 1; height: 2px; border-radius: 2px; background: var(--rule); transition: background .8s; }
+.arc i.done { background: var(--ink-faint); }
+.arc i.now { background: var(--ink); }
+.tools { display: flex; gap: 2px; }
+.icon {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 40px; height: 40px; padding: 0 10px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--ink-soft); cursor: pointer;
+  font: 500 var(--s--1)/1 var(--font-body);
+}
+.icon[aria-pressed="false"] { opacity: .55; }
+.icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.icon .word { display: none; }
+@media (min-width: 560px) { .icon .word { display: inline; } }
+@media (hover: hover) { .icon:hover { background: var(--veil); color: var(--ink); opacity: 1; } }
+
+/* stage: one screen at a time */
+.stage { display: grid; overflow-y: auto; overflow-x: hidden; padding-block: 8px 12px; scrollbar-width: thin; }
+.screen {
+  width: 100%; max-width: var(--col); margin: auto; padding-block: 12px;
+  display: grid; gap: 1.35rem; align-content: center;
+  transition: opacity .55s ease, transform .55s ease;
+}
+.screen > * { min-width: 0; }
+.screen.enter { opacity: 0; transform: translateY(12px); }
+.screen.leave { opacity: 0; transform: translateY(-10px); }
+.screen.leave-back { opacity: 0; transform: translateY(10px); }
+
+.eyebrow { margin: 0; font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .1em; color: var(--ink-soft); text-shadow: var(--lift); }
+h1, h2 { margin: 0; font-family: var(--font-display); font-weight: 500; text-wrap: balance; text-shadow: var(--lift); }
+h1 { font-size: var(--s-3); line-height: 1.04; letter-spacing: -.01em; }
+h2 { font-size: var(--s-1); line-height: 1.3; }
+.sub { margin: -.6rem 0 0; color: var(--ink-soft); text-shadow: var(--lift); }
+.lines { display: grid; gap: .85em; margin: 0; font-family: var(--font-display); font-size: var(--s-1); line-height: 1.42; text-shadow: var(--lift); }
+.lines p { margin: 0; text-wrap: pretty; }
+.lines.staged p { opacity: 0; transform: translateY(6px); transition: opacity 1.3s ease, transform 1.3s ease; }
+.lines.staged p.on { opacity: 1; transform: none; }
+.lines.poem { font-style: italic; gap: .3em; }
+.lines.poem p.gap { height: .7em; }
+.lines.poem .echo { font-style: normal; }
+.lines.small { font-family: var(--font-body); font-size: var(--s-0); line-height: 1.55; color: var(--ink-soft); gap: .6em; }
+.attrib { margin: 0; font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .06em; color: var(--ink-soft); transition: opacity 1.2s; }
+.echo { font-style: italic; color: var(--accent); }
+.meta { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: 0; padding: 0; list-style: none; color: var(--ink-soft); font-size: var(--s--1); }
+.prefs { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: .68em 1em; border-radius: 999px; border: 1px solid var(--rule);
+  background: var(--veil); color: var(--ink); cursor: pointer; font: 500 var(--s--1)/1.1 var(--font-body);
+}
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--sky-mid); }
+.note-small { margin: 0; max-width: 30rem; font-size: var(--s--1); color: var(--ink-soft); }
+.note-small a { color: inherit; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.row.centered { justify-content: center; }
+
+/* footer navigation */
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; max-width: var(--col); min-height: 74px; margin-inline: auto; padding-block: 8px 16px; }
+.btn {
+  padding: .95em 1.5em; border-radius: 999px; border: 1px solid var(--rule);
+  background: var(--veil-strong); color: var(--ink); cursor: pointer;
+  font: 500 var(--s-0)/1 var(--font-body); -webkit-tap-highlight-color: transparent;
+  transition: opacity .5s ease, background .3s ease, color .3s ease;
+}
+.btn.quiet { background: transparent; border-color: transparent; color: var(--ink-soft); }
+.btn.hide { opacity: 0; pointer-events: none; }
+.btn:disabled { opacity: .4; cursor: default; }
+@media (hover: hover) {
+  .btn:not(:disabled):hover { background: var(--ink); color: var(--sky-mid); }
+  .btn.quiet:not(:disabled):hover { background: var(--veil); color: var(--ink); }
+}
+#back { padding-inline: 1.1em; }
+
+/* inputs */
+textarea, input[type="text"] {
+  width: 100%; padding: .85em 1em; border-radius: 12px; border: 1px solid var(--rule);
+  background: var(--veil); color: var(--ink); font: 400 var(--s-0)/1.55 var(--font-body); resize: vertical;
+}
+textarea::placeholder, input::placeholder { color: var(--ink-faint); }
+textarea:focus, input[type="text"]:focus { outline: none; border-color: var(--ink-soft); background: var(--veil-strong); }
+.private { margin: 0; font-size: var(--s--1); color: var(--ink-soft); }
+.flow { height: 2px; border-radius: 2px; overflow: hidden; background: var(--rule); }
+.flow i, .progress i { display: block; width: 0; height: 100%; background: var(--ink-soft); transition: width .3s linear; }
+.options { display: grid; gap: 8px; }
+.opt {
+  display: grid; gap: 2px; padding: .9em 1.1em; text-align: left; border-radius: 14px;
+  border: 1px solid var(--rule); background: var(--veil); color: var(--ink); cursor: pointer;
+  font: 500 var(--s-0)/1.35 var(--font-body);
+}
+.opt small { font-weight: 400; font-size: var(--s--1); color: var(--ink-soft); }
+.opt[aria-pressed="true"] { background: var(--veil-strong); border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.words { display: flex; flex-wrap: wrap; gap: 8px; }
+.add-own { display: flex; gap: 8px; }
+.add-own input { flex: 1; min-width: 0; }
+.add-own .btn { padding-block: .7em; }
+.scale { display: grid; gap: .8rem; }
+.scale output { font-family: var(--font-display); font-size: var(--s-3); line-height: 1; font-variant-numeric: tabular-nums; text-shadow: var(--lift); }
+.scale output.unset { color: var(--ink-faint); }
+input[type="range"] { width: 100%; accent-color: var(--ink); }
+.ends { display: flex; justify-content: space-between; gap: 1rem; font-size: var(--s--1); color: var(--ink-soft); }
+
+/* breath */
+.breath { display: grid; justify-items: center; gap: .9rem; }
+.orb-wrap { display: grid; place-items: center; width: 100%; height: min(42vh, 320px); }
+.orb {
+  width: min(62vw, 260px); max-width: 100%; aspect-ratio: 1; border-radius: 50%; transform: scale(.55);
+  background: radial-gradient(circle at 42% 38%, rgb(var(--orb) / .95), rgb(var(--orb) / .42) 52%, rgb(var(--orb) / 0) 71%);
+  transition-property: transform; transition-timing-function: cubic-bezier(.42, 0, .38, 1); will-change: transform;
+}
+.orb-label { margin: 0; min-height: 1.5em; font-family: var(--font-display); font-size: var(--s-1); text-align: center; text-shadow: var(--lift); }
+.dots { display: flex; gap: 7px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--rule); transition: background .6s; }
+.dots i.done { background: var(--ink-soft); }
+
+/* guided + sit */
+.cue { margin: 0; min-height: 4.2em; font-family: var(--font-display); font-size: var(--s-2); line-height: 1.25; text-wrap: pretty; text-shadow: var(--lift); transition: opacity .8s ease; }
+.cue.fade { opacity: 0; }
+.progress { height: 2px; border-radius: 2px; overflow: hidden; background: var(--rule); }
+.sit-visual { display: grid; place-items: center; height: min(36vh, 280px); }
+.ring { width: min(46vw, 190px); aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--ink-faint); animation: settle 9s ease-in-out infinite paused; }
+.ring.on { animation-play-state: running; }
+@keyframes settle { 0%, 100% { transform: scale(.88); opacity: .5; } 50% { transform: scale(1); opacity: 1; } }
+.time { margin: 0; font-size: var(--s--1); letter-spacing: .06em; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+/* body map */
+.bodymap { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 1.2rem; align-items: center; }
+@media (max-width: 440px) { .bodymap { grid-template-columns: minmax(0, 130px) minmax(0, 1fr); gap: .8rem; } }
+.bodymap svg { width: 100%; height: auto; max-height: 46vh; }
+.bodymap .rg { fill: var(--veil); stroke: var(--ink-faint); stroke-width: 1; cursor: pointer; transition: fill .3s, stroke .3s; }
+.bodymap .rg.on { fill: var(--accent); fill-opacity: .55; stroke: var(--accent); }
+.picked { display: flex; flex-wrap: wrap; gap: 6px; align-content: start; }
+
+/* release */
+.dissolving { padding: .85em 1em; font: 400 var(--s-0)/1.55 var(--font-body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.dissolving span { display: inline-block; transition: transform 2.6s cubic-bezier(.2, .6, .3, 1), opacity 2.6s ease, filter 2.6s ease; transition-delay: var(--d); }
+.dissolving.go span { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; filter: blur(3px); }
+
+/* companion */
+.note { padding: 1.1em 1.25em; border-radius: 16px; border: 1px solid var(--rule); background: var(--veil); }
+.note .by { display: block; margin-bottom: .45em; font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .08em; color: var(--ink-soft); }
+.note .body { font-family: var(--font-display); font-size: calc(var(--s-0) * 1.08); line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.listening { display: inline-flex; gap: 6px; padding-block: .5em; }
+.listening i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); animation: pulse 1.6s ease-in-out infinite; }
+.listening i:nth-child(2) { animation-delay: .2s; }
+.listening i:nth-child(3) { animation-delay: .4s; }
+@keyframes pulse { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: none; } }
+.you { margin: 0; padding-left: 1em; border-left: 1px solid var(--rule); color: var(--ink-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply { display: grid; gap: 10px; }
+
+/* closing card */
+.keep { display: grid; gap: 1.25rem; padding: clamp(1.2rem, 4vw, 2rem); border-radius: 20px; border: 1px solid var(--rule); background: var(--veil); }
+.keep h2 { font-size: var(--s-2); }
+.keep section { display: grid; gap: .3rem; }
+.keep p { margin: 0; }
+.label { margin: 0; font-family: var(--font-label); font-size: var(--s--1); letter-spacing: .1em; color: var(--ink-soft); }
+.anchor { margin: 0; font-family: var(--font-display); font-style: italic; font-size: var(--s-2); line-height: 1.2; color: var(--accent); text-wrap: balance; }
+.shift { font-family: var(--font-display); font-size: var(--s-1); font-variant-numeric: tabular-nums; }
+.lineage { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; font-size: var(--s--1); color: var(--ink-soft); }
+.lineage b { font-weight: 500; color: var(--ink); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.status { margin: 0; font-size: var(--s--1); color: var(--ink-soft); }
+.copybox { min-height: 10em; font-size: var(--s--1); }
+
+/* steady overlay */
+.overlay {
+  position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; overflow-y: auto;
+  padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--scrim); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.overlay .panel { display: grid; gap: 1.1rem; max-width: 30rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen, .lines.staged p, .cue, .attrib { transition-duration: .01s !important; }
+  .ring, .listening i { animation: none; }
+  .dissolving span { transition-duration: .4s !important; transition-delay: 0s !important; }
+}
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="app">
+  <header class="top">
+    <div class="where">
+      <div class="movement" id="movement"></div>
+      <div class="arc" id="arc" aria-hidden="true"></div>
+    </div>
+    <div class="tools">
+      <button class="icon" id="sound" type="button" aria-pressed="true" aria-label="Ambient sound" title="Ambient sound">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3l4.5-3.5v12L7 14.5H4z"/><path d="M15 9.5a3.5 3.5 0 0 1 0 5"/><path d="M17.6 7a7 7 0 0 1 0 10"/></svg><span class="word">sound</span>
+      </button>
+      <button class="icon" id="voice" type="button" aria-pressed="false" aria-label="Voice guidance" title="Voice guidance">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h1.5M8 8.5v7M12 5v14M16 8.5v7M20 12h-1.5"/></svg><span class="word">voice</span>
+      </button>
+      <button class="icon" id="steady" type="button" aria-label="Pause and steady yourself" title="Pause and steady yourself">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="10" r="4"/><path d="M4 18.5h16"/></svg><span class="word">steady</span>
+      </button>
+    </div>
+  </header>
+  <main class="stage" id="stage"></main>
+  <footer class="foot">
+    <button class="btn quiet hide" id="back" type="button" aria-label="Back" tabindex="-1">&larr;</button>
+    <button class="btn" id="next" type="button">Continue</button>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="steady-title">
+  <div class="panel">
+    <p class="eyebrow">steady</p>
+    <h2 id="steady-title">You can pause here.</h2>
+    <div class="lines small">
+      <p>Nothing else needs to happen right now.</p>
+      <p>Feel where your body is supported: the seat, the floor, your back against something.</p>
+      <p>Let your eyes move slowly around the room and rest on five things you can see.</p>
+      <p>Breathe out a little longer than you breathe in. A few times is enough.</p>
+    </div>
+    <p class="note-small">If you might be in danger, or you're thinking about hurting yourself, please reach a person now. In the US, call or text <b>988</b>. Elsewhere, <a href="https://findahelpline.com" target="_blank" rel="noopener">findahelpline.com</a> lists free, confidential lines, or call your local emergency number.</p>
+    <div class="actions">
+      <button class="btn" id="steady-back" type="button">Return to the experience</button>
+      <button class="btn quiet" id="steady-end" type="button">End here for today</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const X = /*__EXPERIENCE__*/null;
+const SKIES = /*__SKIES__*/null;
+if (!X || !SKIES) { document.getElementById("stage").textContent = "This page is the engine template. Build an experience with tools/build.mjs."; return; }
+
+const TS = Number(window.__INNERSKY_TIMESCALE) > 0 ? Number(window.__INNERSKY_TIMESCALE) : 1; // test hook: speeds up every timer
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const KEY = "innersky:" + X.id;
+document.documentElement.lang = X.lang || "en";
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+function el(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "html") n.innerHTML = v;
+    else if (k === "text") n.textContent = v;
+    else n.setAttribute(k, v === true ? "" : String(v));
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return n;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const lit = s => esc(s).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/(^|[\s(“"'])_([^_]+)_(?=[\s.,;:!?)”"']|$)/g, "$1<em>$2</em>");
+const TPL = /\{\{\s*([\w-]+)\s*(?:\|([^}]*))?\}\}/g;
+const joinList = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+const hexRGB = h => { const n = parseInt(String(h).slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const luminance = h => { const c = hexRGB(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+
+/* Templates: {{stepId}} echoes what the person wrote or chose at that step; {{stepId|fallback}} when empty. */
+function answerText(id) {
+  const a = S.answers[id];
+  if (a) { const v = a.label != null ? a.label : a.value; if (Array.isArray(v)) return joinList(v.map(String)); return v == null ? "" : String(v).trim(); }
+  if (X.vars && X.vars[id] != null) return String(X.vars[id]);
+  return "";
+}
+function fill(str) {
+  if (str == null) return "";
+  str = String(str); let out = "", last = 0;
+  for (const m of str.matchAll(TPL)) {
+    out += lit(str.slice(last, m.index));
+    const v = answerText(m[1]);
+    last = m.index + m[0].length;
+    const tidy = /^[.,;:!?]/.test(str.slice(last)) ? v.replace(/[.!?…]+$/, "") : v; // avoid "words.,"
+    out += v ? `<span class="echo">${esc(tidy)}</span>` : lit(m[2] || "");
+  }
+  return out + lit(str.slice(last));
+}
+const plain = str => String(str == null ? "" : str).replace(TPL, (m, id, fb) => answerText(id) || fb || "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/(^|[\s(“"'])_([^_]+)_/g, "$1$2");
+
+/* ---------- steps + state ---------- */
+const MOVES = X.movements;
+const STEPS = [];
+{ let mv = MOVES[0].id; for (const s of X.steps) { if (s.movement) mv = s.movement; STEPS.push(Object.assign({}, s, { movement: mv })); } }
+const moveIndex = id => Math.max(0, MOVES.findIndex(m => m.id === id));
+
+const S = { runId: null, startedAt: null, index: 0, history: [], answers: {}, measure: {}, completed: false, sound: !(X.sound && X.sound.default === "off"), voice: false };
+let resumeAt = 0;
+try {
+  const v = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (v) {
+    if (v.runId && !v.completed && v.index > 0 && v.index < STEPS.length) {
+      Object.assign(S, { runId: v.runId, startedAt: v.startedAt, history: v.history || [], answers: v.answers || {}, measure: v.measure || {} });
+      resumeAt = v.index;
+    }
+    if (typeof v.sound === "boolean") S.sound = v.sound;
+    if (typeof v.voice === "boolean") S.voice = v.voice;
+  }
+} catch (e) {}
+function saveLocal() {
+  try { localStorage.setItem(KEY, JSON.stringify({ runId: S.runId, startedAt: S.startedAt, index: S.index, history: S.history, answers: S.answers, measure: S.measure, completed: S.completed, sound: S.sound, voice: S.voice })); } catch (e) {}
+}
+function setAnswer(step, value, extra) {
+  S.answers[step.id] = Object.assign({ type: step.type, prompt: plain(step.prompt || step.title || step.instruction || "") , value }, step.private ? { private: true } : {}, extra || {});
+  saveLocal(); sync.soon();
+}
+function passes(step) {
+  if (!step.when) return true;
+  return [].concat(step.when).every(c => {
+    const a = S.answers[c.step], v = a ? a.value : undefined;
+    const has = v != null && v !== "" && !(Array.isArray(v) && !v.length);
+    if ("answered" in c) return c.answered ? has : !has;
+    if ("is" in c) { const o = [].concat(c.is); return Array.isArray(v) ? v.some(x => o.includes(x)) : o.includes(v); }
+    if ("not" in c) { const o = [].concat(c.not); return Array.isArray(v) ? !v.some(x => o.includes(x)) : !o.includes(v); }
+    if ("gte" in c) return typeof v === "number" && v >= c.gte;
+    if ("lte" in c) return typeof v === "number" && v <= c.lte;
+    return true;
+  });
+}
+
+/* ---------- runtime capabilities (all optional; the page works without them) ---------- */
+const caps = { db: null, sample: null, downloads: null };
+let saved = "local"; // local | saved | off
+const sync = {
+  timer: 0, busy: false, dirty: false, dead: false,
+  soon(sec) { if (!S.runId) return; this.dirty = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), (sec == null ? 1.6 : sec) * 1000); },
+  async flush() {
+    if (!caps.db || this.dead || this.busy || !this.dirty || !S.runId) return;
+    this.busy = true; this.dirty = false;
+    try { await caps.db.doc("runs/" + S.runId).set(payload()); saved = "saved"; }
+    catch (e) { const c = e && e.code; if (c === "unavailable" || c === "resource_exhausted") this.dirty = true; else { this.dead = true; saved = "off"; } }
+    finally {
+      this.busy = false; updateStatus();
+      if (this.dirty && !this.dead) { clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 4000); }
+    }
+  }
+};
+function payload() {
+  const answers = {};
+  for (const [id, a] of Object.entries(S.answers)) if (!a.private) answers[id] = a;
+  return { experience: X.id, title: X.title, startedAt: S.startedAt, updatedAt: new Date().toISOString(), completed: S.completed, measure: S.measure, path: S.history.concat(S.index).map(i => STEPS[i].id), answers };
+}
+if (window.claude && typeof window.claude.use === "function") {
+  window.claude.use("db").then(d => { caps.db = d; if (d) sync.flush(); }, () => {});
+  window.claude.use("sample").then(s => { caps.sample = s; }, () => {});
+  window.claude.use("downloads").then(d => { caps.downloads = d; const b = $("#save-file"); if (b) b.hidden = !d; }, () => {});
+}
+
+/* ---------- sound: a soft drone, moving air, and a bowl-like bell, all synthesized ---------- */
+const audio = (() => {
+  let ctx = null, master = null, filter = null, air = null, on = false;
+  const root = Number(X.sound && X.sound.root) || 98, bellF = Number(X.sound && X.sound.bell) || 392;
+  function init() {
+    if (ctx) return true;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+    try { ctx = new AC(); } catch (e) { return false; }
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 700; filter.Q.value = .6;
+    const drone = ctx.createGain(); drone.gain.value = .5; filter.connect(drone); drone.connect(master);
+    for (const [mult, type, g] of [[.5, "sine", .09], [1, "sine", .16], [1.5, "sine", .07], [2, "triangle", .03], [3, "sine", .018]]) {
+      for (const det of [-3, 3]) {
+        const o = ctx.createOscillator(), gn = ctx.createGain();
+        o.type = type; o.frequency.value = root * mult; o.detune.value = det + Math.random() * 2 - 1; gn.gain.value = g / 2;
+        o.connect(gn); gn.connect(filter); o.start();
+      }
+    }
+    const lfo = ctx.createOscillator(), lfoG = ctx.createGain(); lfo.frequency.value = .045; lfoG.gain.value = 170; lfo.connect(lfoG); lfoG.connect(filter.frequency); lfo.start();
+    const len = ctx.sampleRate * 6, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    let last = 0; for (let i = 0; i < len; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2; }
+    const fadeN = 2048; for (let i = 0; i < fadeN; i++) { const k = i / fadeN; d[i] *= k; d[len - 1 - i] *= k; }
+    const src = ctx.createBufferSource(), nf = ctx.createBiquadFilter(); src.buffer = buf; src.loop = true; nf.type = "lowpass"; nf.frequency.value = 420;
+    air = ctx.createGain(); air.gain.value = .05; src.connect(nf); nf.connect(air); air.connect(master); src.start();
+    const wave = ctx.createOscillator(), waveG = ctx.createGain(); wave.frequency.value = .07; waveG.gain.value = .022; wave.connect(waveG); waveG.connect(air.gain); wave.start();
+    return true;
+  }
+  function ramp(param, value, sec) { const t = ctx.currentTime; param.cancelScheduledValues(t); param.setValueAtTime(param.value, t); param.linearRampToValueAtTime(value, t + sec); }
+  return {
+    start() { if (!init()) return; if (ctx.resume) ctx.resume(); ramp(master.gain, .55, 4); on = true; },
+    stop() { if (!ctx) return; ramp(master.gain, 0, 1.5); on = false; },
+    duck(d) { if (ctx && on) ramp(master.gain, d ? .18 : .55, 1); },
+    mood(sky) { if (ctx) ramp(filter.frequency, 380 + luminance(sky.mid) * 900, 6); },
+    breath(kind, sec) { if (!ctx || !on) return; const target = kind === "in" ? .11 : kind === "out" ? .028 : .05; ramp(air.gain, target, Math.max(.3, sec * TS)); },
+    bell(strength) {
+      if (!ctx || !on) return; strength = strength == null ? 1 : strength;
+      const t = ctx.currentTime + .02;
+      for (const [r, a, dec] of [[1, 1, 5.5], [2.76, .45, 3.8], [5.4, .22, 2.6], [8.93, .1, 1.8]]) {
+        for (const det of [0, 1.3]) {
+          const o = ctx.createOscillator(), g = ctx.createGain(), end = t + dec * (.8 + strength * .4);
+          o.type = "sine"; o.frequency.value = bellF * r + det;
+          g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.11 * a * strength, t + .012); g.gain.exponentialRampToValueAtTime(.0001, end);
+          o.connect(g); g.connect(master); o.start(t); o.stop(end + .1);
+        }
+      }
+    }
+  };
+})();
+
+/* ---------- voice guidance via the browser's speech synthesis ---------- */
+const speech = (() => {
+  const ok = "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
+  let chosen = null;
+  function pick() {
+    const vs = speechSynthesis.getVoices(); if (!vs.length) return null;
+    const lang = (X.lang || "en").slice(0, 2).toLowerCase(), pool = vs.filter(v => (v.lang || "").toLowerCase().startsWith(lang));
+    for (const p of ["Samantha", "Serena", "Moira", "Karen", "Daniel", "Google UK English Female", "Microsoft Aria", "Microsoft Jenny", "Microsoft Sonia", "Google US English"]) { const v = pool.find(x => x.name.includes(p)); if (v) return v; }
+    return pool.find(v => v.localService) || pool[0] || null;
+  }
+  if (ok) speechSynthesis.addEventListener && speechSynthesis.addEventListener("voiceschanged", () => { chosen = pick(); });
+  return {
+    ok,
+    say(text, force) {
+      if (!ok || !text || !(S.voice || force)) return;
+      try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); chosen = chosen || pick(); if (chosen) u.voice = chosen; u.rate = .84; u.pitch = .94; speechSynthesis.speak(u); } catch (e) {}
+    },
+    stop() { if (ok) try { speechSynthesis.cancel(); } catch (e) {} }
+  };
+})();
+
+let wake = null;
+async function keepAwake() { try { if (navigator.wakeLock && !wake) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); } } catch (e) {} }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S.runId && !S.completed) keepAwake(); });
+
+/* ---------- the sky ---------- */
+const INK = {
+  dark:  { ink: "#1b2230", soft: "rgb(27 34 48 / .74)", faint: "rgb(27 34 48 / .46)", rule: "rgb(27 34 48 / .18)", veil: "rgb(255 255 255 / .34)", veilStrong: "rgb(255 255 255 / .64)", scrim: "rgb(238 238 234 / .9)", lift: "0 0 18px rgb(255 255 255 / .5)" },
+  light: { ink: "#f6f1ea", soft: "rgb(246 241 234 / .8)", faint: "rgb(246 241 234 / .5)", rule: "rgb(246 241 234 / .22)", veil: "rgb(8 10 24 / .26)", veilStrong: "rgb(8 10 24 / .46)", scrim: "rgb(10 12 26 / .88)", lift: "0 1px 16px rgb(0 0 0 / .45)" }
+};
+function applyInk(s) {
+  const r = document.documentElement, st = r.style, k = INK[s.ink] || INK.dark;
+  st.setProperty("--ink", k.ink); st.setProperty("--ink-soft", k.soft); st.setProperty("--ink-faint", k.faint); st.setProperty("--rule", k.rule);
+  st.setProperty("--veil", k.veil); st.setProperty("--veil-strong", k.veilStrong); st.setProperty("--scrim", k.scrim); st.setProperty("--lift", k.lift);
+  st.setProperty("--accent", s.accent); st.setProperty("--orb", hexRGB(s.orb).join(" ")); st.setProperty("--sky-mid", s.mid);
+  r.dataset.ink = s.ink === "light" ? "light" : "dark";
+}
+const sky = (() => {
+  const cv = $("#sky"), g = cv.getContext("2d");
+  const prep = s => ({ top: hexRGB(s.top), mid: hexRGB(s.mid), low: hexRGB(s.low), glow: hexRGB(s.glow), glowA: s.glowA, glowX: s.glowX, glowY: s.glowY, glowR: s.glowR, stars: s.stars });
+  const lerp = (a, b, k) => a + (b - a) * k, mixC = (a, b, k) => a.map((v, i) => lerp(v, b[i], k));
+  const mix = (a, b, k) => ({ top: mixC(a.top, b.top, k), mid: mixC(a.mid, b.mid, k), low: mixC(a.low, b.low, k), glow: mixC(a.glow, b.glow, k), glowA: lerp(a.glowA, b.glowA, k), glowX: lerp(a.glowX, b.glowX, k), glowY: lerp(a.glowY, b.glowY, k), glowR: lerp(a.glowR, b.glowR, k), stars: lerp(a.stars, b.stars, k) });
+  const css = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a == null ? 1 : a})`;
+  const stars = Array.from({ length: 160 }, () => ({ x: Math.random(), y: Math.pow(Math.random(), 1.4) * .8, r: Math.random() * 1.1 + .25, p: Math.random() * 6.28, s: .4 + Math.random() * .9 }));
+  let W = 0, H = 0, from = null, to = null, cur = null, t0 = 0, dur = 1, raf = 0, lastDraw = 0, inked = null, target = null, grain = null;
+  try {
+    const n = document.createElement("canvas"); n.width = n.height = 128; const nc = n.getContext("2d"), im = nc.createImageData(128, 128);
+    for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+    nc.putImageData(im, 0, 0); grain = g.createPattern(n, "repeat");
+  } catch (e) {}
+  function draw(now) {
+    if (!cur || !W) return;
+    const lg = g.createLinearGradient(0, 0, 0, H); lg.addColorStop(0, css(cur.top)); lg.addColorStop(.56, css(cur.mid)); lg.addColorStop(1, css(cur.low));
+    g.globalAlpha = 1; g.fillStyle = lg; g.fillRect(0, 0, W, H);
+    if (cur.glowA > .01) {
+      const x = W * cur.glowX, y = H * cur.glowY, r = Math.max(W, H) * cur.glowR, rg = g.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, css(cur.glow, cur.glowA)); rg.addColorStop(1, css(cur.glow, 0)); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+    }
+    if (cur.stars > .01) {
+      g.fillStyle = "#ffffff";
+      for (const s of stars) { const tw = REDUCED ? .85 : .6 + .4 * Math.sin(now / 1000 * s.s + s.p); g.globalAlpha = Math.max(0, cur.stars * tw * (1 - s.y)); g.beginPath(); g.arc(s.x * W, s.y * H, s.r, 0, 6.2832); g.fill(); }
+      g.globalAlpha = 1;
+    }
+    if (grain) { g.globalAlpha = .035; g.fillStyle = grain; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  }
+  function loop(now) {
+    raf = 0;
+    const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    cur = mix(from, to, e);
+    if (k >= .45 && inked !== target) { applyInk(SKIES[target]); inked = target; }
+    if (k < 1 || now - lastDraw > 66) { draw(now); lastDraw = now; }
+    if (k < 1 || (!REDUCED && cur.stars > .02)) raf = requestAnimationFrame(loop);
+  }
+  function resize() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1); W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); draw(performance.now());
+  }
+  return {
+    resize,
+    set(name, sec) {
+      const n = SKIES[name] && name[0] !== "_" ? name : "overcast";
+      if (n === target) return;
+      target = n; const t = prep(SKIES[n]);
+      if (!cur) { from = to = cur = t; applyInk(SKIES[n]); inked = n; resize(); }
+      else { from = cur; to = t; t0 = performance.now(); dur = Math.max(1, (sec || 7) * 1000 * (REDUCED ? .25 : 1) * TS); }
+      audio.mood(SKIES[n]);
+      if (!raf) raf = requestAnimationFrame(loop);
+    }
+  };
+})();
+window.addEventListener("resize", () => sky.resize());
+
+/* ---------- screen lifecycle ---------- */
+let PAUSED = false;
+function mkScope() {
+  const timers = new Set(), ends = []; let alive = true;
+  return {
+    get alive() { return alive; },
+    after(sec, fn) { const t = setTimeout(() => { timers.delete(t); if (alive) fn(); }, sec * 1000 * TS); timers.add(t); return t; },
+    wait(sec) { return new Promise(res => this.after(sec, res)); },
+    onEnd(fn) { ends.push(fn); },
+    end() { alive = false; timers.forEach(clearTimeout); timers.clear(); ends.forEach(f => { try { f(); } catch (e) {} }); }
+  };
+}
+/* runs timed segments against real elapsed time, respecting pauses */
+function timeline(sc, segs, o) {
+  o = o || {};
+  if (!segs.length) { if (o.onDone) o.onDone(); return; }
+  const total = segs.reduce((a, s) => a + s.seconds, 0);
+  let i = 0, inSeg = 0, all = 0, last = performance.now();
+  if (o.onSegment) o.onSegment(segs[0], 0);
+  const tick = () => {
+    const now = performance.now(), dt = (now - last) / 1000 / TS; last = now;
+    if (!(PAUSED || (o.paused && o.paused()))) {
+      inSeg += dt; all += dt;
+      if (o.onTick) o.onTick(Math.min(1, all / total), total - all);
+      while (i < segs.length && inSeg >= segs[i].seconds) {
+        inSeg -= segs[i].seconds; i++;
+        if (i >= segs.length) { if (o.onDone) o.onDone(); return; }
+        if (o.onSegment) o.onSegment(segs[i], i);
+      }
+    }
+    sc.after(.1, tick);
+  };
+  sc.after(.1, tick);
+}
+function swap(node, html, sc) { node.classList.add("fade"); sc.after(.6, () => { node.innerHTML = html; node.classList.remove("fade"); }); }
+const linesEl = (arr, cls) => el("div", { class: "lines" + (cls ? " " + cls : "") }, (arr || []).map(l => l === "" ? el("p", { class: "gap", "aria-hidden": "true" }) : el("p", { html: fill(l) })));
+function heading(step, screen) {
+  if (step.title) screen.append(el("h2", { html: fill(step.title) }));
+  if (step.prompt) screen.append(el("h2", { html: fill(step.prompt) }));
+  if (step.sub) screen.append(el("p", { class: "sub", html: fill(step.sub) }));
+  if (step.lines && step.type !== "text") screen.append(linesEl(step.lines, "small"));
+}
+
+const stage = $("#stage"), nextBtn = $("#next"), backBtn = $("#back"), mvEl = $("#movement"), arcEl = $("#arc");
+arcEl.append(...MOVES.map(() => el("i")));
+const ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"];
+let scope = mkScope(), busy = false, lastMove = null, onNext = null;
+
+function setNext(label, o) {
+  o = o || {};
+  const show = o.show !== false;
+  nextBtn.textContent = label; nextBtn.classList.toggle("hide", !show); nextBtn.classList.toggle("quiet", !!o.quiet);
+  nextBtn.tabIndex = show ? 0 : -1; nextBtn.setAttribute("aria-hidden", show ? "false" : "true"); onNext = o.action || null;
+}
+nextBtn.addEventListener("click", () => { if (busy || nextBtn.classList.contains("hide")) return; (onNext || next)(); });
+backBtn.addEventListener("click", () => back());
+
+function setMovement(step) {
+  const i = moveIndex(step.movement), m = MOVES[i];
+  mvEl.textContent = (ROMAN[i] || String(i + 1)) + " · " + String(m.name || m.id).toLowerCase();
+  [...arcEl.children].forEach((n, k) => { n.className = k < i ? "done" : k === i ? "now" : ""; });
+  if (lastMove !== null && lastMove !== i) audio.bell(.4);
+  lastMove = i;
+  sky.set(step.sky || m.sky);
+}
+function nextIndex(from) { for (let i = from + 1; i < STEPS.length; i++) if (passes(STEPS[i])) return i; return -1; }
+function next() { const ni = nextIndex(S.index); if (ni < 0) return; S.history.push(S.index); S.index = ni; saveLocal(); sync.soon(.4); show(1); }
+function jump(i) { if (i === S.index) return; S.history.push(S.index); S.index = i; saveLocal(); sync.soon(.4); show(1); }
+function back() { if (busy || !S.history.length) return; S.index = S.history.pop(); saveLocal(); show(-1); }
+async function show(dir) {
+  busy = true; scope.end(); speech.stop(); PAUSED = false; audio.breath("rest", 1);
+  const sc = scope = mkScope(), step = STEPS[S.index];
+  setMovement(step);
+  const old = stage.querySelector(".screen");
+  if (old) { old.classList.add(dir < 0 ? "leave-back" : "leave"); await new Promise(r => setTimeout(r, REDUCED ? 0 : 450 * TS)); old.remove(); }
+  if (!sc.alive) return;
+  const screen = el("section", { class: "screen enter", "data-step": step.id, "data-type": step.type });
+  stage.append(screen); stage.scrollTop = 0;
+  document.body.dataset.step = step.id; document.body.dataset.type = step.type;
+  const canBack = S.history.length > 0 && step.type !== "threshold";
+  backBtn.classList.toggle("hide", !canBack); backBtn.tabIndex = canBack ? 0 : -1;
+  setNext(step.cta || "Continue");
+  try { (RENDER[step.type] || RENDER.text)(step, screen, sc); }
+  catch (err) { console.error(err); screen.append(el("p", { class: "note-small", text: "This step couldn't be shown. You can continue." })); setNext("Continue"); }
+  requestAnimationFrame(() => requestAnimationFrame(() => screen.classList.remove("enter")));
+  busy = false;
+}
+function begin() {
+  if (S.sound) audio.start();
+  keepAwake();
+  if (!S.runId) { S.runId = "run-" + new Date().toISOString().slice(0, 10) + "-" + Math.random().toString(36).slice(2, 8); S.startedAt = new Date().toISOString(); }
+  sync.soon(.2);
+}
+
+/* ---------- step renderers ---------- */
+const BREATH = {
+  sigh:      [{ kind: "in", seconds: 2.5, label: "breathe in", to: .9 }, { kind: "in", seconds: 1, label: "a little more", to: 1.04 }, { kind: "out", seconds: 6, label: "long, slow out" }, { kind: "hold", seconds: 1.5, label: "rest" }],
+  resonance: [{ kind: "in", seconds: 5, label: "in" }, { kind: "out", seconds: 5.5, label: "out" }],
+  extended:  [{ kind: "in", seconds: 4, label: "in" }, { kind: "out", seconds: 7, label: "out, slowly" }],
+  box:       [{ kind: "in", seconds: 4, label: "in" }, { kind: "hold", seconds: 4, label: "hold" }, { kind: "out", seconds: 4, label: "out" }, { kind: "hold", seconds: 4, label: "hold" }],
+  "4-7-8":   [{ kind: "in", seconds: 4, label: "in" }, { kind: "hold", seconds: 7, label: "hold" }, { kind: "out", seconds: 8, label: "out" }],
+  awaken:    [{ kind: "in", seconds: 2, label: "in" }, { kind: "out", seconds: 1.5, label: "out" }],
+  hum:       [{ kind: "in", seconds: 4, label: "in" }, { kind: "out", seconds: 8, label: "hmmm…", say: "hum" }]
+};
+const breathPhases = p => Array.isArray(p) ? p.map(x => ({ kind: x.kind || "in", seconds: Number(x.seconds) || 4, label: x.label || x.kind || "", to: x.to, say: x.say })) : (BREATH[p] || BREATH.extended);
+const REGIONS = [["head", "head & face"], ["throat", "throat"], ["chest", "chest"], ["belly", "belly"], ["pelvis", "hips & pelvis"], ["arms", "shoulders & arms"], ["hands", "hands"], ["legs", "legs"], ["feet", "feet"], ["back", "back"], ["everywhere", "everywhere"], ["unclear", "hard to say"]];
+
+const RENDER = {
+  threshold(step, screen, sc) {
+    const resuming = resumeAt > 0;
+    screen.append(el("p", { class: "eyebrow", html: fill(step.eyebrow || X.subtitle || "a passage for today") }), el("h1", { html: fill(step.title || X.title) }));
+    if (step.lines) screen.append(linesEl(step.lines));
+    const meta = el("ul", { class: "meta" });
+    if (X.duration) meta.append(el("li", { text: "about " + X.duration + " minutes" }));
+    for (const p of [].concat(X.prep || [])) meta.append(el("li", { html: fill(p) }));
+    if (meta.children.length) screen.append(meta);
+    const prefs = el("div", { class: "prefs" },
+      el("button", { class: "chip", type: "button", "data-pref": "sound" }),
+      speech.ok ? el("button", { class: "chip", type: "button", "data-pref": "voice" }) : null);
+    prefs.addEventListener("click", e => { const b = e.target.closest("[data-pref]"); if (b) (b.dataset.pref === "sound" ? toggleSound : toggleVoice)(); });
+    screen.append(prefs);
+    const nCompanion = STEPS.filter(s => s.type === "companion").length;
+    const notes = [];
+    if (nCompanion) notes.push((nCompanion === 1 ? "At one moment" : "At " + nCompanion + " moments") + ", Claude responds to what you've written. The first time, you may be asked to allow it.");
+    notes.push("If anything gets to be too much, the steady button at the top is always there.");
+    screen.append(el("p", { class: "note-small", text: notes.join(" ") }));
+    renderPrefs();
+    if (resuming) {
+      const fresh = el("button", { class: "btn quiet", type: "button" }, "Start fresh");
+      fresh.addEventListener("click", () => { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, completed: false }); resumeAt = 0; begin(); next(); });
+      screen.append(el("div", { class: "row" }, fresh));
+      setNext("Continue where you left off", { action: () => { begin(); S.index = resumeAt; resumeAt = 0; saveLocal(); show(1); } });
+    } else {
+      setNext(step.cta || "Begin", { action: () => { begin(); next(); } });
+    }
+  },
+
+  text(step, screen, sc) {
+    if (step.title) screen.append(el("h2", { html: fill(step.title) }));
+    const box = linesEl(step.lines, "staged" + (step.style ? " " + step.style : ""));
+    const ps = [...box.children];
+    screen.append(box);
+    const attrib = step.attribution ? el("p", { class: "attrib", html: fill(step.attribution), style: "opacity:0" }) : null;
+    if (attrib) screen.append(attrib);
+    setNext(step.cta || "Continue", { show: false });
+    let done = false;
+    const finish = () => {
+      if (done) return; done = true;
+      ps.forEach(p => p.classList.add("on")); if (attrib) attrib.style.opacity = 1;
+      sc.after(step.hold || 0, () => setNext(step.cta || "Continue"));
+    };
+    screen.addEventListener("click", finish);
+    (async () => {
+      await sc.wait(.4);
+      for (let i = 0; i < ps.length && !done; i++) {
+        ps[i].classList.add("on");
+        if (step.voice) speech.say(ps[i].textContent);
+        if (i < ps.length - 1) { const w = ps[i].textContent.split(/\s+/).filter(Boolean).length; await sc.wait(step.pace != null ? step.pace : Math.min(5.5, 1.2 + w * .26)); }
+      }
+      await sc.wait(.6); finish();
+    })();
+  },
+
+  breath(step, screen, sc) {
+    heading(step, screen);
+    const phases = breathPhases(step.pattern), cycles = Math.max(1, step.cycles || 6);
+    const orb = el("div", { class: "orb" }), label = el("p", { class: "orb-label", html: fill(step.ready || "when you're ready") });
+    const dots = el("div", { class: "dots", "aria-hidden": "true" }, Array.from({ length: cycles }, () => el("i")));
+    const start = el("button", { class: "btn", type: "button" }, step.start || "Start");
+    screen.append(el("div", { class: "breath" }, el("div", { class: "orb-wrap" }, orb), label, dots, start));
+    setNext("Skip", { quiet: true });
+    start.addEventListener("click", () => {
+      start.remove();
+      const segs = [];
+      for (let c = 0; c < cycles; c++) phases.forEach((p, k) => segs.push(Object.assign({}, p, { cycle: c, first: k === 0 })));
+      timeline(sc, segs, {
+        onSegment(p) {
+          if (p.first && p.cycle > 0) dots.children[p.cycle - 1].className = "done";
+          label.textContent = p.label;
+          const scale = p.to != null ? p.to : p.kind === "in" ? 1 : p.kind === "out" ? .55 : null;
+          if (scale != null) { orb.style.transitionDuration = (p.seconds * TS) + "s"; orb.style.transform = "scale(" + scale + ")"; }
+          audio.breath(p.kind, p.seconds);
+          if (p.cycle < 2) speech.say(p.say || p.label);
+        },
+        onDone() {
+          dots.children[cycles - 1].className = "done";
+          orb.style.transitionDuration = (2 * TS) + "s"; orb.style.transform = "scale(.7)";
+          label.innerHTML = fill(step.after || "rest here");
+          audio.breath("rest", 2); audio.bell(.5);
+          setNext(step.cta || "Continue");
+        }
+      });
+    });
+  },
+
+  guided(step, screen, sc) {
+    heading(step, screen);
+    const cue = el("p", { class: "cue", html: fill(step.ready || "Find a comfortable position. Begin when you're ready.") });
+    const bar = el("i"), start = el("button", { class: "btn", type: "button" }, step.start || "Begin"), pause = el("button", { class: "btn quiet", type: "button", hidden: true }, "Pause");
+    screen.append(cue, el("div", { class: "progress", "aria-hidden": "true" }, bar), el("div", { class: "row" }, start, pause));
+    setNext("Skip", { quiet: true });
+    let held = false;
+    pause.addEventListener("click", () => { held = !held; pause.textContent = held ? "Resume" : "Pause"; if (held) speech.stop(); });
+    start.addEventListener("click", () => {
+      start.remove(); pause.hidden = false;
+      if (step.bell !== false) audio.bell(.6);
+      const segs = (step.cues || []).map(c => typeof c === "string" ? { text: c, seconds: 12 } : { text: c.text, seconds: Number(c.seconds) || 12 });
+      timeline(sc, segs, {
+        paused: () => held,
+        onSegment(c) { swap(cue, fill(c.text), sc); speech.say(plain(c.text)); },
+        onTick(f) { bar.style.width = (f * 100).toFixed(1) + "%"; },
+        onDone() {
+          pause.remove(); bar.style.width = "100%";
+          if (step.bell !== false) audio.bell(.6);
+          if (step.after) swap(cue, fill(step.after), sc);
+          setNext(step.cta || "Continue");
+        }
+      });
+    });
+  },
+
+  sit(step, screen, sc) {
+    if (step.title) screen.append(el("h2", { html: fill(step.title) }));
+    const secs = Number(step.seconds) || 120;
+    const anchor = el("p", { class: "cue", html: fill(step.anchor || "Just this breath.") });
+    const ring = el("div", { class: "ring" }), time = el("p", { class: "time", text: fmt(secs) });
+    const start = el("button", { class: "btn", type: "button" }, step.start || "Begin");
+    screen.append(anchor, el("div", { class: "sit-visual", "aria-hidden": "true" }, ring), el("div", { class: "row centered" }, start, time));
+    setNext("Skip", { quiet: true });
+    start.addEventListener("click", () => {
+      start.remove(); ring.classList.add("on"); audio.bell(.7); speech.say(plain(step.anchor || ""));
+      timeline(sc, [{ seconds: secs }], {
+        onTick(f, left) { time.textContent = step.showTime === false ? "" : fmt(left); },
+        onDone() {
+          ring.classList.remove("on"); time.textContent = ""; audio.bell(.7);
+          if (step.after) swap(anchor, fill(step.after), sc);
+          setNext(step.cta || "Continue");
+        }
+      });
+    });
+  },
+
+  write(step, screen, sc) {
+    heading(step, screen);
+    const ta = el("textarea", { id: "w-" + step.id, rows: step.rows || 5, placeholder: plain(step.placeholder || ""), "aria-label": plain(step.prompt || "Your words") });
+    const prev = S.answers[step.id]; ta.value = prev && typeof prev.value === "string" ? prev.value : "";
+    screen.append(ta);
+    if (step.private) screen.append(el("p", { class: "private", text: "This stays on this device. It isn't saved for Claude or sent anywhere." }));
+    if (step.seconds) {
+      const bar = el("i"), hint = el("p", { class: "private", html: fill(step.timerHint || "Keep the words moving. Nobody will read this unless you want them to.") });
+      screen.append(el("div", { class: "flow", "aria-hidden": "true" }, bar), hint);
+      let started = false;
+      ta.addEventListener("input", () => {
+        if (started) return; started = true;
+        timeline(sc, [{ seconds: Number(step.seconds) }], { onTick(f) { bar.style.width = (f * 100).toFixed(1) + "%"; }, onDone() { hint.innerHTML = fill(step.timeUp || "That's the time. Finish your sentence, or keep going."); } });
+      });
+    }
+    const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight + 2, window.innerHeight * .5) + "px"; };
+    const refresh = () => { const has = !!ta.value.trim(); setNext(has ? (step.cta || "Continue") : (step.skip || "Skip"), { quiet: !has }); };
+    ta.addEventListener("input", () => { setAnswer(step, ta.value); refresh(); grow(); });
+    refresh(); requestAnimationFrame(grow);
+    if (matchMedia("(pointer: fine)").matches) sc.after(.35, () => ta.focus({ preventScroll: true }));
+  },
+
+  choose(step, screen, sc) {
+    heading(step, screen);
+    const multi = !!step.multi, prev = S.answers[step.id];
+    const opts = (step.options || []).map(o => typeof o === "string" ? { label: o, value: o } : Object.assign({}, o, { value: o.value != null ? o.value : o.label }));
+    let picked = new Set(prev ? [].concat(prev.value).filter(v => v !== "other") : []);
+    const list = el("div", { class: "options", role: "group" });
+    const btns = opts.map(o => {
+      const b = el("button", { class: "opt", type: "button", "aria-pressed": String(picked.has(o.value)) }, el("span", { html: fill(o.label) }), o.hint ? el("small", { html: fill(o.hint) }) : null);
+      b.addEventListener("click", () => {
+        if (multi) { if (picked.has(o.value)) picked.delete(o.value); else picked.add(o.value); }
+        else { picked = new Set(picked.has(o.value) ? [] : [o.value]); if (other) other.value = ""; }
+        commit();
+      });
+      list.append(b); return b;
+    });
+    let other = null;
+    if (step.allowOther) {
+      other = el("input", { type: "text", id: "o-" + step.id, placeholder: plain(step.otherPlaceholder || "something else…"), "aria-label": "Something else" });
+      other.value = (prev && prev.other) || "";
+      other.addEventListener("input", () => { if (!multi && other.value.trim()) picked.clear(); commit(); });
+      list.append(other);
+    }
+    screen.append(list);
+    function commit() {
+      btns.forEach((b, i) => b.setAttribute("aria-pressed", String(picked.has(opts[i].value))));
+      const o = other ? other.value.trim() : "";
+      const vals = [...picked], labels = vals.map(v => plain((opts.find(x => x.value === v) || { label: v }).label));
+      if (o) { vals.push("other"); labels.push(o); }
+      setAnswer(step, multi ? vals : (vals[0] != null ? vals[0] : null), { label: multi ? labels : (labels[0] || ""), other: o || undefined });
+      const has = vals.length > 0;
+      setNext(has ? (step.cta || "Continue") : "Skip", { quiet: !has });
+    }
+    const has = picked.size > 0 || !!(other && other.value.trim());
+    setNext(has ? (step.cta || "Continue") : "Skip", { quiet: !has });
+  },
+
+  words(step, screen, sc) {
+    heading(step, screen);
+    const prev = S.answers[step.id], chosen = new Set(prev && Array.isArray(prev.value) ? prev.value : []);
+    const all = [...(step.words || [])]; chosen.forEach(w => { if (!all.includes(w)) all.push(w); });
+    const box = el("div", { class: "words", role: "group" });
+    const hint = el("p", { class: "private", text: "" });
+    const draw = () => box.replaceChildren(...all.map(w => {
+      const b = el("button", { class: "chip", type: "button", "aria-pressed": String(chosen.has(w)) }, w);
+      b.addEventListener("click", () => {
+        if (chosen.has(w)) chosen.delete(w);
+        else { if (step.max && chosen.size >= step.max) { hint.textContent = "Up to " + step.max + ". Let one go to choose another."; return; } chosen.add(w); }
+        hint.textContent = ""; draw(); commit();
+      });
+      return b;
+    }));
+    const commit = () => { setAnswer(step, [...chosen]); const has = chosen.size > 0; setNext(has ? (step.cta || "Continue") : "Skip", { quiet: !has }); };
+    draw(); screen.append(box);
+    if (step.allowOwn !== false) {
+      const inp = el("input", { type: "text", id: "own-" + step.id, placeholder: plain(step.ownPlaceholder || "a word of your own"), "aria-label": "Add your own word" });
+      const add = el("button", { class: "btn quiet", type: "button" }, "Add");
+      const doAdd = () => { const w = inp.value.trim(); if (!w) return; if (!all.includes(w)) all.push(w); if (!(step.max && chosen.size >= step.max)) chosen.add(w); inp.value = ""; draw(); commit(); };
+      add.addEventListener("click", doAdd); inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doAdd(); } });
+      screen.append(el("div", { class: "add-own" }, inp, add));
+    }
+    screen.append(hint);
+    const has = chosen.size > 0; setNext(has ? (step.cta || "Continue") : "Skip", { quiet: !has });
+  },
+
+  scale(step, screen, sc) {
+    heading(step, screen);
+    const min = step.min != null ? step.min : 0, max = step.max != null ? step.max : 10, prev = S.answers[step.id] ? S.answers[step.id].value : null;
+    const out = el("output", { class: prev == null ? "unset" : "", text: prev == null ? "–" : String(prev) });
+    const r = el("input", { type: "range", id: "r-" + step.id, min, max, step: 1, value: prev != null ? prev : Math.round((min + max) / 2), "aria-label": plain(step.prompt || "Scale") });
+    const commit = () => {
+      const v = Number(r.value); out.textContent = v; out.className = "";
+      if (step.measure) S.measure[step.measure] = v;
+      setAnswer(step, v); setNext(step.cta || "Continue");
+    };
+    r.addEventListener("input", commit); r.addEventListener("change", commit);
+    screen.append(el("div", { class: "scale" }, out, r, el("div", { class: "ends" }, el("span", { html: fill(step.low || "") }), el("span", { html: fill(step.high || "") }))));
+    setNext(prev == null ? "Skip" : (step.cta || "Continue"), { quiet: prev == null });
+  },
+
+  body(step, screen, sc) {
+    heading(step, screen);
+    const prev = S.answers[step.id], chosen = new Set(prev && Array.isArray(prev.keys) ? prev.keys : []);
+    const wrap = el("div", { class: "bodymap" });
+    wrap.innerHTML = '<svg viewBox="0 0 200 400" aria-hidden="true">'
+      + '<circle class="rg" data-r="head" cx="100" cy="40" r="27"/><rect class="rg" data-r="throat" x="88" y="69" width="24" height="22" rx="9"/>'
+      + '<rect class="rg" data-r="arms" x="40" y="96" width="22" height="124" rx="11"/><rect class="rg" data-r="arms" x="138" y="96" width="22" height="124" rx="11"/>'
+      + '<circle class="rg" data-r="hands" cx="51" cy="236" r="13"/><circle class="rg" data-r="hands" cx="149" cy="236" r="13"/>'
+      + '<rect class="rg" data-r="chest" x="66" y="94" width="68" height="62" rx="24"/><rect class="rg" data-r="belly" x="68" y="159" width="64" height="52" rx="20"/>'
+      + '<rect class="rg" data-r="pelvis" x="66" y="214" width="68" height="40" rx="18"/>'
+      + '<rect class="rg" data-r="legs" x="70" y="257" width="27" height="104" rx="13"/><rect class="rg" data-r="legs" x="103" y="257" width="27" height="104" rx="13"/>'
+      + '<ellipse class="rg" data-r="feet" cx="80" cy="377" rx="17" ry="9"/><ellipse class="rg" data-r="feet" cx="120" cy="377" rx="17" ry="9"/></svg>';
+    const picks = el("div", { class: "picked", role: "group", "aria-label": "Places in the body" });
+    const chips = REGIONS.map(([k, label]) => { const b = el("button", { class: "chip", type: "button", "data-k": k }, label); picks.append(b); return b; });
+    wrap.append(picks); screen.append(wrap);
+    const toggle = k => { if (chosen.has(k)) chosen.delete(k); else chosen.add(k); commit(); };
+    wrap.querySelector("svg").addEventListener("click", e => { const t = e.target.closest(".rg"); if (t) toggle(t.dataset.r); });
+    picks.addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (b) toggle(b.dataset.k); });
+    function paint() {
+      wrap.querySelectorAll(".rg").forEach(n => n.classList.toggle("on", chosen.has(n.dataset.r)));
+      chips.forEach(b => b.setAttribute("aria-pressed", String(chosen.has(b.dataset.k))));
+    }
+    function commit() {
+      paint();
+      const keys = REGIONS.map(r => r[0]).filter(k => chosen.has(k));
+      setAnswer(step, keys.map(k => REGIONS.find(r => r[0] === k)[1]), { keys });
+      const has = keys.length > 0; setNext(has ? (step.cta || "Continue") : "Skip", { quiet: !has });
+    }
+    paint();
+    const has = chosen.size > 0; setNext(has ? (step.cta || "Continue") : "Skip", { quiet: !has });
+  },
+
+  release(step, screen, sc) {
+    heading(step, screen);
+    const ta = el("textarea", { id: "rel-" + step.id, rows: step.rows || 4, placeholder: plain(step.placeholder || ""), "aria-label": plain(step.prompt || "What you're letting go") });
+    const go = el("button", { class: "btn", type: "button", disabled: true }, step.release || "Let it go");
+    const note = el("p", { class: "private", text: step.keep ? "" : "What you write here isn't saved anywhere. It's only for letting go." });
+    screen.append(ta, el("div", { class: "row" }, go), note);
+    ta.addEventListener("input", () => { go.disabled = !ta.value.trim(); });
+    setNext("Skip", { quiet: true });
+    go.addEventListener("click", () => {
+      const text = ta.value; go.parentNode.remove(); note.remove();
+      const d = el("div", { class: "dissolving", "aria-hidden": "true" });
+      text.slice(0, 900).split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { d.append(part); return; }
+        const s = el("span", { text: part });
+        s.style.setProperty("--dx", (Math.random() * 40 - 20).toFixed(1) + "px");
+        s.style.setProperty("--dy", (-(40 + Math.random() * 90)).toFixed(1) + "px");
+        s.style.setProperty("--r", (Math.random() * 30 - 15).toFixed(1) + "deg");
+        s.style.setProperty("--d", (Math.random() * .9).toFixed(2) + "s");
+        d.append(s);
+      });
+      ta.replaceWith(d);
+      S.answers[step.id] = { type: "release", prompt: plain(step.prompt || ""), value: step.keep ? text : "(released)" }; saveLocal(); sync.soon();
+      audio.bell(.35); setNext("Continue", { show: false });
+      requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add("go")));
+      sc.after(3.6, () => {
+        d.remove();
+        if (step.after) {
+          const box = linesEl(step.after, "staged"); screen.append(box);
+          [...box.children].forEach((p, i) => sc.after(.3 + i * 1.6, () => p.classList.add("on")));
+          sc.after(.6 + step.after.length * 1.6, () => setNext(step.cta || "Continue"));
+        } else setNext(step.cta || "Continue");
+      });
+    });
+  },
+
+  companion(step, screen, sc) {
+    heading(step, screen);
+    const maxTurns = Math.max(1, step.turns || 1), convo = [];
+    let ctl = null, turns = 0;
+    sc.onEnd(() => { if (ctl) ctl.abort(); });
+    setNext(step.cta || "Continue", { quiet: true });
+    const note = () => { const by = el("span", { class: "by" }), body = el("div", { class: "body" }); screen.append(el("div", { class: "note" }, by, body)); return { by, body }; };
+    const record = live => setAnswer(step, convo.filter(t => t.role === "assistant").map(t => t.content).join("\n\n"), { live, exchange: convo.slice() });
+    function useFallback(n) {
+      n.by.textContent = step.fallbackBy || "a note written for you";
+      n.body.innerHTML = fill(step.fallback || "Read back what you've written so far, slowly, as if a friend had written it. What do you notice?");
+      convo.push({ role: "assistant", content: plain(step.fallback || "") }); record(false);
+      setNext(step.cta || "Continue");
+    }
+    async function ask() {
+      const n = note();
+      if (!caps.sample) return useFallback(n);
+      n.by.textContent = "listening";
+      n.body.replaceChildren(el("span", { class: "listening", role: "status", "aria-label": "Claude is responding" }, el("i"), el("i"), el("i")));
+      ctl = new AbortController();
+      const input = convo.length ? [{ role: "user", content: companionPrompt(step) }].concat(convo) : companionPrompt(step);
+      const opts = { signal: ctl.signal, modelTier: step.tier || "default", onText: u => { n.by.textContent = "claude, responding"; n.body.textContent = u.text; } };
+      if (maxTurns > 1) opts.cache = false;
+      try {
+        const res = await caps.sample(input, opts);
+        if (!sc.alive) return;
+        n.by.textContent = "claude, responding to you"; n.body.textContent = res.text;
+        convo.push({ role: "assistant", content: res.text }); record(true);
+        speech.say(res.text);
+        turns++;
+        if (turns < maxTurns) offerReply();
+        setNext(step.cta || "Continue");
+      } catch (e) {
+        if (!sc.alive || (e && e.code === "cancelled")) return;
+        if (e && e.text && e.code !== "refused") { n.by.textContent = "claude (interrupted)"; n.body.textContent = e.text; setNext(step.cta || "Continue"); return; }
+        n.body.textContent = ""; n.by.textContent = ""; n.body.parentNode.remove();
+        useFallback(note());
+      }
+    }
+    function offerReply() {
+      const ta = el("textarea", { id: "reply-" + step.id + "-" + turns, rows: 3, placeholder: plain(step.replyPlaceholder || "Say something back, if you like…"), "aria-label": "Your reply" });
+      const send = el("button", { class: "btn", type: "button", disabled: true }, "Send");
+      const wrap = el("div", { class: "reply" }, ta, el("div", { class: "row" }, send));
+      screen.append(wrap);
+      ta.addEventListener("input", () => { send.disabled = !ta.value.trim(); });
+      send.addEventListener("click", () => {
+        const t = ta.value.trim(); if (!t) return;
+        wrap.replaceWith(el("p", { class: "you", text: t }));
+        convo.push({ role: "user", content: t }); record(true); ask();
+      });
+    }
+    sc.after(step.delay != null ? step.delay : .8, ask);
+  },
+
+  card(step, screen, sc) {
+    S.completed = true; saveLocal(); sync.soon(.1);
+    audio.bell(.8);
+    const keep = el("article", { class: "keep" });
+    keep.append(el("p", { class: "label", text: step.eyebrow || "to carry with you" }));
+    if (step.title) keep.append(el("h2", { html: fill(step.title) }));
+    if (step.anchor) keep.append(el("p", { class: "anchor", html: fill(step.anchor) }));
+    if (step.lines) keep.append(linesEl(step.lines, "small"));
+    const section = (label, ...kids) => el("section", {}, el("p", { class: "label", text: label }), ...kids);
+    if (step.practice) keep.append(section("a pocket practice", el("p", { html: "<strong>" + fill(step.practice.name) + "</strong>" }), ...(step.practice.lines || []).map(l => el("p", { html: fill(l) }))));
+    if (step.next) keep.append(section("one small step", el("p", { html: fill(step.next) })));
+    const m = S.measure, ms = X.measure || {};
+    if (m.before != null && m.after != null) keep.append(section(ms.label ? String(ms.label).toLowerCase() : "how you arrived, how you're leaving", el("p", { class: "shift", text: m.before + " → " + m.after }), ms.low || ms.high ? el("p", { class: "private", text: "0 = " + (ms.low || "") + " · 10 = " + (ms.high || "") + ". Any change, or none, is useful to know." }) : null));
+    if (X.lineage && X.lineage.length) keep.append(section("woven from", el("ul", { class: "lineage" }, X.lineage.map(l => el("li", { html: "<b>" + esc(l.name) + "</b>" + (l.source ? " · " + esc(l.source) : "") })))));
+    screen.append(keep);
+    const status = el("p", { class: "status", id: "save-status" });
+    const copy = el("button", { class: "btn", type: "button" }, "Copy");
+    const file = el("button", { class: "btn", type: "button", id: "save-file", hidden: !caps.downloads }, "Save as a file");
+    const again = el("button", { class: "btn quiet", type: "button" }, "Begin again");
+    screen.append(el("div", { class: "actions" }, copy, file, again), status);
+    copy.addEventListener("click", () => {
+      const text = summary();
+      const fallback = () => { const box = el("textarea", { class: "copybox", id: "copy-" + step.id, readonly: true, "aria-label": "Your summary" }); box.value = text; copy.parentNode.after(box); box.select(); status.textContent = "Select all and copy."; };
+      try { navigator.clipboard.writeText(text).then(() => { status.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+    });
+    file.addEventListener("click", async () => {
+      if (!caps.downloads) return;
+      try { await caps.downloads.save({ filename: X.id + ".md", data: summary() }); status.textContent = "Saved."; }
+      catch (e) { status.textContent = e && e.code === "declined" ? "Not saved." : "Saving isn't available here. Copy works instead."; }
+    });
+    again.addEventListener("click", () => { Object.assign(S, { runId: null, startedAt: null, history: [], answers: {}, measure: {}, completed: false, index: 0 }); resumeAt = 0; saveLocal(); lastMove = null; show(-1); });
+    setNext("", { show: false });
+    updateStatus();
+  }
+};
+
+function companionPrompt(step) {
+  const parts = ["You are the companion voice inside a private, guided inner experience called \"" + X.title + "\". Claude designed it for one person after a conversation about how they are today. You are speaking with that person now, partway through it."];
+  if (X.intention) parts.push("The intention of this experience: " + X.intention);
+  if (X.context) parts.push("What they shared before beginning:\n" + X.context);
+  if (X.companion && X.companion.voice) parts.push("Your voice and lens: " + X.companion.voice);
+  const ids = step.include || S.history.concat(S.index).map(i => STEPS[i].id);
+  const seen = new Set(), lines = [];
+  for (const id of ids) {
+    if (seen.has(id)) continue; seen.add(id);
+    const a = S.answers[id]; if (!a || a.private || a.type === "release" || a.type === "companion") continue;
+    const v = answerText(id); if (v) lines.push("- " + (a.prompt || id) + " → " + v);
+  }
+  if (lines.length) parts.push("What they have written or chosen so far in this experience:\n" + lines.join("\n"));
+  parts.push("What to do now: " + plain(step.instruction || "Respond to what they have just written."));
+  parts.push("Guidelines: Speak directly to them as \"you\", in a warm, plain, unhurried voice. Use their own words where you can. Stay under " + (step.maxWords || 120) + " words. No headings, bullet points, lists of tips, diagnosis or exclamation marks. Avoid platitudes and stock wellness phrases. Respond to what is alive right now rather than summarizing. End with a question or an invitation only if it truly serves them. If anything they wrote suggests they may be in danger or thinking of harming themselves or someone else, set the exercise aside, respond with care, and encourage them to reach a person now: in the US, call or text 988; elsewhere, findahelpline.com or local emergency services. Reply with only the words to show them.");
+  return parts.join("\n\n");
+}
+
+function summary() {
+  const out = ["# " + X.title, new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }), ""];
+  const card = STEPS.find(s => s.type === "card") || {};
+  if (X.intention) out.push("Intention: " + X.intention);
+  if (card.anchor) out.push("To carry: " + plain(card.anchor));
+  if (card.practice) out.push("Pocket practice: " + plain(card.practice.name) + " — " + (card.practice.lines || []).map(plain).join(" "));
+  if (card.next) out.push("One small step: " + plain(card.next));
+  if (S.measure.before != null && S.measure.after != null) out.push((X.measure && X.measure.label ? X.measure.label : "Arrived → leaving") + ": " + S.measure.before + " → " + S.measure.after);
+  const rows = [];
+  for (const i of S.history.concat(S.index)) {
+    const st = STEPS[i], a = S.answers[st.id];
+    if (!a || a.private || a.type === "release") continue;
+    const v = answerText(st.id); if (v) rows.push("", "**" + (a.prompt || st.id) + "**", v);
+  }
+  if (rows.length) out.push("", "## Along the way", ...rows);
+  if (X.lineage && X.lineage.length) out.push("", "## Woven from", ...X.lineage.map(l => "- " + l.name + (l.source ? " (" + l.source + ")" : "")));
+  return out.join("\n") + "\n";
+}
+
+function updateStatus() {
+  const s = $("#save-status"); if (!s) return;
+  s.textContent = saved === "saved" ? "Your reflections are saved privately, so Claude can read them when you go back to your conversation."
+    : caps.db && !sync.dead ? "Saving your reflections privately for Claude…"
+    : "Your reflections are kept in this browser. Copy them if you'd like to share them with Claude.";
+}
+
+/* ---------- controls ---------- */
+const soundBtn = $("#sound"), voiceBtn = $("#voice"), overlay = $("#overlay");
+function renderPrefs() {
+  soundBtn.setAttribute("aria-pressed", String(S.sound)); voiceBtn.setAttribute("aria-pressed", String(S.voice)); voiceBtn.hidden = !speech.ok;
+  document.querySelectorAll("[data-pref]").forEach(b => {
+    const k = b.dataset.pref; b.setAttribute("aria-pressed", String(S[k]));
+    b.textContent = (k === "sound" ? "Ambient sound" : "Voice guidance") + (S[k] ? " · on" : " · off");
+  });
+}
+function toggleSound() { S.sound = !S.sound; if (S.sound) { if (S.runId) audio.start(); } else audio.stop(); renderPrefs(); saveLocal(); }
+function toggleVoice() { S.voice = !S.voice; if (S.voice) speech.say("I'll speak the guidance.", true); else speech.stop(); renderPrefs(); saveLocal(); }
+soundBtn.addEventListener("click", toggleSound);
+voiceBtn.addEventListener("click", toggleVoice);
+function openSteady() { PAUSED = true; speech.stop(); audio.duck(true); overlay.hidden = false; $("#steady-back").focus(); }
+function closeSteady() { PAUSED = false; audio.duck(false); overlay.hidden = true; $("#steady").focus(); }
+$("#steady").addEventListener("click", openSteady);
+$("#steady-back").addEventListener("click", closeSteady);
+$("#steady-end").addEventListener("click", () => { closeSteady(); const c = STEPS.findIndex(s => s.type === "card"); if (c >= 0) { if (!S.runId) begin(); jump(c); } });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !overlay.hidden) { closeSteady(); return; }
+  if (!overlay.hidden) return;
+  const t = e.target, tag = t && t.tagName;
+  if (tag === "TEXTAREA" || tag === "INPUT" || tag === "BUTTON" || tag === "A") return;
+  if (e.key === "Enter" || e.key === "ArrowRight") { if (!nextBtn.classList.contains("hide")) nextBtn.click(); }
+  else if (e.key === "ArrowLeft") back();
+});
+
+renderPrefs();
+show(1);
+})();
+</script>

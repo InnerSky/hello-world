@@ -1,0 +1,94 @@
+#!/usr/bin/env node
+// Walk through a built experience in headless Chromium, the way a person would, and save a
+// screenshot of every step. Timers run fast; Claude-only features fall back to their offline text.
+//
+//   node tools/preview.mjs private/sessions/<id>            # phone-sized walk-through
+//   node tools/preview.mjs private/sessions/<id> --desktop  # also capture desktop size
+//
+// Screenshots go to <dir>/preview/ (git-ignored). Console errors are reported and fail the run.
+import fs from "node:fs";
+import path from "node:path";
+import { execSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
+
+const dir = process.argv[2];
+const desktop = process.argv.includes("--desktop");
+if (!dir) { console.error("usage: node tools/preview.mjs <session-dir> [--desktop]"); process.exit(2); }
+
+let chromium;
+try { ({ chromium } = await import("playwright")); }
+catch {
+  const globalRoot = execSync("npm root -g").toString().trim();
+  ({ chromium } = await import(pathToFileURL(path.join(globalRoot, "playwright", "index.mjs")).href));
+}
+
+const page_ = fs.readFileSync(path.join(dir, "experience.html"), "utf8");
+const outDir = path.join(dir, "preview");
+fs.rmSync(outDir, { recursive: true, force: true });
+fs.mkdirSync(outDir, { recursive: true });
+// The Artifact host wraps the page in this skeleton at publish time; mirror it locally.
+const shell = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${page_}</body></html>`;
+const file = path.join(outDir, "index.html");
+fs.writeFileSync(file, shell);
+
+const browser = await chromium.launch();
+const problems = [];
+
+async function walk(label, viewport) {
+  const ctx = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  page.on("console", m => { if (m.type() === "error" && !/fonts\.(googleapis|gstatic)/.test(m.text())) problems.push(`[${label}] console: ${m.text()}`); });
+  page.on("pageerror", e => problems.push(`[${label}] error: ${e.message}`));
+  await page.addInitScript(() => { window.__INNERSKY_TIMESCALE = 0.03; try { localStorage.clear(); } catch {} });
+  await page.goto(pathToFileURL(file).href);
+  await page.waitForTimeout(400);
+
+  const visited = [];
+  for (let n = 0; n < 120; n++) {
+    const { step, type } = await page.evaluate(() => ({ step: document.body.dataset.step, type: document.body.dataset.type }));
+    if (!step) break;
+    if (visited.at(-1) !== step) {
+      await page.waitForTimeout(700);
+      await page.screenshot({ path: path.join(outDir, `${label}-${String(visited.length).padStart(2, "0")}-${step}.png`) });
+      visited.push(step);
+    }
+    const screen = page.locator(".screen").last();
+    // act like a person would on each kind of step
+    if (type === "write") await screen.locator("textarea").first().fill("A few honest words, written in the preview.");
+    if (type === "choose") await screen.locator(".opt").first().click();
+    if (type === "words") { const chips = screen.locator(".chip"); await chips.nth(0).click(); await chips.nth(1).click(); }
+    if (type === "scale") await screen.locator("input[type=range]").evaluate(r => { r.value = 6; r.dispatchEvent(new Event("input", { bubbles: true })); });
+    if (type === "body") await screen.locator(".chip").nth(2).click();
+    if (type === "release") { await screen.locator("textarea").fill("the thing I'm putting down"); await screen.locator(".row .btn").click(); }
+    if (["breath", "guided", "sit"].includes(type)) { const b = screen.locator(".btn").first(); if (await b.count()) await b.click(); }
+    if (type === "card") { await page.waitForTimeout(500); await page.screenshot({ path: path.join(outDir, `${label}-${String(visited.length).padStart(2, "0")}-card-full.png`), fullPage: true }); break; }
+    // wait for Continue (not Skip) to be offered, then take it
+    const ok = await page.waitForFunction(() => {
+      const b = document.getElementById("next");
+      return b && !b.classList.contains("hide") && !b.classList.contains("quiet");
+    }, null, { timeout: 15000 }).then(() => true, () => false);
+    if (!ok) {
+      const label2 = await page.locator("#next").textContent();
+      if (label2 && /skip/i.test(label2)) { await page.locator("#next").click(); }
+      else { problems.push(`[${label}] stuck on step "${step}" (${type})`); break; }
+    } else {
+      await page.locator("#next").click();
+    }
+    await page.waitForTimeout(150);
+  }
+  // the steady overlay
+  await page.locator("#steady").click();
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: path.join(outDir, `${label}-zz-steady.png`) });
+  await ctx.close();
+  return visited;
+}
+
+const visited = await walk("phone", { width: 390, height: 844 });
+if (desktop) await walk("desktop", { width: 1280, height: 820 });
+await browser.close();
+
+console.log(`walked ${visited.length} steps: ${visited.join(" → ")}`);
+console.log(`screenshots: ${outDir}`);
+if (problems.length) { for (const p of problems) console.error("  ✗ " + p); process.exit(1); }
+console.log("✓ no console errors");
